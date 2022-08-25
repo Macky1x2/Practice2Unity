@@ -26,16 +26,7 @@ public class RoofChecker : MonoBehaviour
     {
         if (collision.tag == roofTag)
         {
-            onRoofEnter = true;
-            onRoof90 = false;
-            ContactPoint2D[] contacts = new ContactPoint2D[4];
-            int contactsNum = collision.GetContacts(contacts);
-            if (contactsNum > 0)
-            {
-                Vector2 normal = contacts[0].normal;
-                float angle = Vector2.Angle(new Vector2(1, 0), normal);
-                if (angle == 90) onRoof90 = true;
-            }
+            collisionProcessOnRoof(collision);
         }
     }
 
@@ -43,27 +34,9 @@ public class RoofChecker : MonoBehaviour
     {
         if (collision.tag == roofTag)
         {
-            onRoofEnter = true;
-            onRoof90 = false;
-            ContactPoint2D[] contacts = new ContactPoint2D[4];
-            int contactsNum = collision.GetContacts(contacts);
-            if (contactsNum > 0)
-            {
-                Vector2 normal = contacts[0].normal;
-                float angle = Vector2.Angle(new Vector2(1, 0), normal);
-                if (angle == 90) onRoof90 = true;
-            }
+            collisionProcessOnRoof(collision);
         }
     }
-
-    //private void OnTriggerExit2D(Collider2D collision)
-    //{
-    //    if (collision.tag == roofTag)
-    //    {
-    //        onRoofEnter = false;
-    //        onRoof90 = false;
-    //    }
-    //}
 
     public bool GetOnRoofEnter()
     {
@@ -73,5 +46,19 @@ public class RoofChecker : MonoBehaviour
     public bool GetOnRoof90()
     {
         return onRoof90;
+    }
+
+    private void collisionProcessOnRoof(in Collider2D collision)
+    {
+        onRoofEnter = true;
+        onRoof90 = false;
+        ContactPoint2D[] contacts = new ContactPoint2D[4];
+        int contactsNum = collision.GetContacts(contacts);
+        if (contactsNum > 0)
+        {
+            Vector2 normal = contacts[0].normal;
+            float angle = Vector2.Angle(new Vector2(1, 0), normal);
+            if (angle == 90) onRoof90 = true;
+        }
     }
 }

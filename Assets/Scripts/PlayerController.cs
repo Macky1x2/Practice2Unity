@@ -57,11 +57,28 @@ public class PlayerController : MonoBehaviour
 
     private void VelocityUpdate()
     {
+        //左右移動と重力処理
+        HorizonAndGravityUpdate();
+
+        //ジャンプ処理
+        JumpUpdate();
+
+        //この時点でvevlocityにはプレイヤーが取るべき速度が入っている
+        rb.velocity = velocity;
+    }
+
+    private void JumpEnd()
+    {
+        jumping = false;
+    }
+
+    private void HorizonAndGravityUpdate()
+    {
         float verticalSpeed;
         if (velocity.y == 10) Debug.Log("test");
         if (rb.velocity.magnitude == 0) horizonSpeed = 0;
-         //horizonSpeed = velocity.x;
-         verticalSpeed = velocity.y;
+        //horizonSpeed = velocity.x;
+        verticalSpeed = velocity.y;
 
         if (-maxHorizontalSpeed < horizonSpeed && horizonSpeed < maxHorizontalSpeed && Input.GetAxis("Horizontal") != 0)
         {
@@ -75,7 +92,7 @@ public class PlayerController : MonoBehaviour
             float deltaSpeed = horizontalStopAccel * Time.deltaTime;
             if (horizonSpeed >= -deltaSpeed && horizonSpeed <= deltaSpeed) horizonSpeed = 0;
             else horizonSpeed = horizonSpeed >= 0 ? horizonSpeed - deltaSpeed : horizonSpeed + deltaSpeed;
-            if(onGround && !jumped) verticalSpeed = 0;
+            if (onGround && !jumped) verticalSpeed = 0;
         }
 
         if (!onGround)
@@ -86,7 +103,7 @@ public class PlayerController : MonoBehaviour
                 if (verticalSpeed < -maxGravitySpeed) verticalSpeed = -maxGravitySpeed;
             }
         }
-        
+
         if (onGround && !jumped)
         {
             velocity = horizonMoveDirection * horizonSpeed;
@@ -95,8 +112,10 @@ public class PlayerController : MonoBehaviour
         {
             velocity = new Vector2(horizonSpeed, verticalSpeed);
         }
+    }
 
-        //ジャンプ処理
+    private void JumpUpdate()
+    {
         if (Input.GetButtonDown("Jump"))
         {
             if (onGround && !onRoof)
@@ -107,10 +126,6 @@ public class PlayerController : MonoBehaviour
                 jumping = true;
                 jumpTimeProgress = 0;
             }
-            //else if (jumped && Input.GetButton("Jump"))
-            //{
-            //    rb.velocity = new Vector2(rb.velocity.x, JumpVelocity);
-            //}
         }
         else if (Input.GetButton("Jump"))
         {
@@ -118,7 +133,7 @@ public class PlayerController : MonoBehaviour
             {
                 JumpEnd();
             }
-            else if(!onGround && jumping && jumpTimeProgress <= jumpUpTime)
+            else if (!onGround && jumping && jumpTimeProgress <= jumpUpTime)
             {
                 velocity = new Vector2(velocity.x, JumpVelocity);
                 jumpTimeProgress += Time.deltaTime;
@@ -132,12 +147,5 @@ public class PlayerController : MonoBehaviour
         {
             velocity = new Vector2(velocity.x, 0);
         }
-
-        rb.velocity = velocity;
-    }
-
-    private void JumpEnd()
-    {
-        jumping = false;
     }
 }
