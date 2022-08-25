@@ -6,25 +6,38 @@ public class PlayerController : MonoBehaviour
 {
     public GroundChecker groundCheck;
     public RoofChecker roofCheck;
+    public WallChecker wallCheck;
+
     public float maxHorizontalSpeed;
     public float horizontalAccel;
     public float horizontalStopAccel;
+
     public float gravityAccel;
     public float maxGravitySpeed;
+
     public float JumpVelocity;
     public float jumpUpTime;
 
+
     private bool onGround;
     private bool preOnGround;
-    private bool onRoof;
-    private Rigidbody2D rb;
     private Vector2 horizonMoveDirection;
-    private Vector2 velocity;
     private float horizonSpeed;
+
+    private bool onRoof;
+    private bool onRoofAnd90;
+
+    private bool onWall;
+    private bool onWallAndLeft;
+
     private bool jumped;
     private bool jumping;
     private float jumpTimeProgress;
-    private bool onRoofAnd90;
+    
+    private Rigidbody2D rb;
+    private Vector2 velocity;
+    private PlayerIs playerState;
+
 
     // Start is called before the first frame update
     void Start()
@@ -36,20 +49,13 @@ public class PlayerController : MonoBehaviour
         jumpTimeProgress = 0;
         jumping = false;
         preOnGround = false;
+        playerState = PlayerIs.NomalMove;
     }
 
     // Update is called once per frame
     void Update()
     {
-        onGround = groundCheck.OnGroundCheck();
-        onRoof = roofCheck.GetOnRoofEnter();
-        onRoofAnd90 = roofCheck.GetOnRoof90();
-        if (!preOnGround && onGround)
-        {
-            jumped = false;
-            jumping = false;
-        }
-        horizonMoveDirection = groundCheck.getMoveDirection();
+        GetInformationFromChildren();
         VelocityUpdate();
 
         preOnGround = onGround;
@@ -57,6 +63,10 @@ public class PlayerController : MonoBehaviour
 
     private void VelocityUpdate()
     {
+        //プレイヤーの状態決定
+        PlayerStateUpdate();
+
+        //HorizonAndGravityUpdate(), JumpUpdate()の実行順で固定
         //左右移動と重力処理
         HorizonAndGravityUpdate();
 
@@ -70,6 +80,15 @@ public class PlayerController : MonoBehaviour
     private void JumpEnd()
     {
         jumping = false;
+    }
+
+    private void JumpStart()
+    {
+        velocity = new Vector2(velocity.x, JumpVelocity);
+        horizonSpeed = velocity.x;
+        jumped = true;
+        jumping = true;
+        jumpTimeProgress = 0;
     }
 
     private void HorizonAndGravityUpdate()
@@ -120,11 +139,11 @@ public class PlayerController : MonoBehaviour
         {
             if (onGround && !onRoof)
             {
-                velocity = new Vector2(velocity.x, JumpVelocity);
-                horizonSpeed = velocity.x;
-                jumped = true;
-                jumping = true;
-                jumpTimeProgress = 0;
+                JumpStart();
+            }
+            else if (playerState == PlayerIs.onWall)
+            {
+                JumpStart();
             }
         }
         else if (Input.GetButton("Jump"))
@@ -147,5 +166,69 @@ public class PlayerController : MonoBehaviour
         {
             velocity = new Vector2(velocity.x, 0);
         }
+    }
+
+    private void PlayerStateUpdate()
+    {
+        //壁処理
+        if (!WallUpdate())
+        {
+            playerState = PlayerIs.NomalMove;
+        }
+    }
+
+    private bool WallUpdate()
+    {
+        bool ret = false;
+        if (!onGround && onWall)
+        {
+            ret = true;
+            if (onWallAndLeft)
+            {
+                if (Input.GetAxis("Horizontal") == 1)
+                {
+                    playerState = PlayerIs.onWall;
+                    JumpValInit();
+                }
+            }
+            else
+            {
+                if (Input.GetAxis("Horizontal") == -1)
+                {
+                    playerState = PlayerIs.onWall;
+                    JumpValInit();
+                }
+            }
+        }
+        return ret;
+    }
+
+    private void GetInformationFromChildren()
+    {
+        onGround = groundCheck.OnGroundCheck();
+        if (!preOnGround && onGround)
+        {
+            JumpValInit();
+        }
+        horizonMoveDirection = groundCheck.getMoveDirection();
+
+        onRoof = roofCheck.GetOnRoofEnter();
+        onRoofAnd90 = roofCheck.GetOnRoof90();
+
+        onWall = wallCheck.OnWallCheck();
+        onWallAndLeft = wallCheck.GetIsLeftIfOnWall();
+    }
+
+    private void JumpValInit()
+    {
+        jumped = false;
+        jumping = false;
+    }
+
+
+    private enum PlayerIs
+    {
+        NomalMove,
+        onWall
     }
 }
