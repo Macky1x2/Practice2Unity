@@ -99,7 +99,7 @@ public class PlayerController : MonoBehaviour
         //ÉWÉÉÉìÉvèàóù
         if (Input.GetButtonDown("Jump"))
         {
-            if (onGround)
+            if (onGround && !onRoof)
             {
                 velocity = new Vector2(velocity.x, JumpVelocity);
                 horizonSpeed = velocity.x;
@@ -117,10 +117,6 @@ public class PlayerController : MonoBehaviour
             if (onRoof)
             {
                 JumpEnd();
-                if (onRoofAnd90)
-                {
-                    velocity = new Vector2(velocity.x, 0);
-                }
             }
             else if(!onGround && jumping && jumpTimeProgress <= jumpUpTime)
             {
@@ -132,41 +128,12 @@ public class PlayerController : MonoBehaviour
         {
             JumpEnd();
         }
+        if (onRoofAnd90)
+        {
+            velocity = new Vector2(velocity.x, 0);
+        }
 
         rb.velocity = velocity;
-    }
-
-    private void HorizonUpdate(ref float horizonSpeed)
-    {
-        if (-maxHorizontalSpeed < horizonSpeed && horizonSpeed < maxHorizontalSpeed && Input.GetAxis("Horizontal") != 0)
-        {
-            float deltaSpeed = Input.GetAxis("Horizontal") * horizontalAccel * Time.deltaTime;
-            horizonSpeed += deltaSpeed;
-            if (horizonSpeed < -maxHorizontalSpeed) horizonSpeed = -maxHorizontalSpeed;
-            if (horizonSpeed > maxHorizontalSpeed) horizonSpeed = maxHorizontalSpeed;
-        }
-        else if (Input.GetAxis("Horizontal") == 0)
-        {
-            float deltaSpeed = horizontalStopAccel * Time.deltaTime;
-            if (horizonSpeed >= -deltaSpeed && horizonSpeed <= deltaSpeed) horizonSpeed = 0;
-            else horizonSpeed = horizonSpeed >= 0 ? horizonSpeed - deltaSpeed : horizonSpeed + deltaSpeed;
-        }
-    }
-
-    private void VerticalUpdate(ref float verticalSpeed)
-    {
-        if (!onGround)
-        {
-            if (verticalSpeed > -maxGravitySpeed)
-            {
-                verticalSpeed -= gravityAccel * Time.deltaTime;
-                if (verticalSpeed < -maxGravitySpeed) verticalSpeed = -maxGravitySpeed;
-            }
-        }
-        else
-        {
-            verticalSpeed = 0;
-        }
     }
 
     private void JumpEnd()
