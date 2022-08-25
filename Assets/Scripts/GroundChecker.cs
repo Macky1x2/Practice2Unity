@@ -16,14 +16,8 @@ public class GroundChecker : MonoBehaviour
         onGroundEnter = false;
         onGroundStay = false;
         onGroundExit = false;
-        groundTag = "Ground";
+        groundTag = "Block";
         moveDirection = Vector2.right;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     private void LateUpdate()
@@ -35,6 +29,7 @@ public class GroundChecker : MonoBehaviour
 
     public bool OnGroundCheck()
     {
+        //OnTriggerStay2DはUpdateの前に必ずしも実行されない(FixedUpdateの前に実行されている?)ためonGroundExit, onGroundが必要
         if (onGroundEnter || onGroundStay) onGround = true;
         else if(onGroundExit) onGround = false;
         return onGround;
@@ -45,24 +40,11 @@ public class GroundChecker : MonoBehaviour
         return moveDirection;
     }
 
-    public bool getOnGroundEnter()
-    {
-        return onGroundEnter;
-    }
-
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if(collision.tag == groundTag)
         {
-            ContactPoint2D[] contacts = new ContactPoint2D[4];
-            int contactsNum = collision.GetContacts(contacts);
-            if (contactsNum > 0)
-            {
-                onGroundEnter = true;
-                Vector2 normal = contacts[0].normal;
-                Vector2 direction = moveDirection - Vector2.Dot(moveDirection, normal) * normal;
-                moveDirection = direction.normalized;
-            }
+            collisionProcessOnGround(in collision, ref onGroundEnter);
         }
     }
 
@@ -70,15 +52,7 @@ public class GroundChecker : MonoBehaviour
     {
         if (collision.tag == groundTag)
         {
-            ContactPoint2D[] contacts = new ContactPoint2D[4];
-            int contactsNum = collision.GetContacts(contacts);
-            if (contactsNum > 0)
-            {
-                onGroundStay = true;
-                Vector2 normal = contacts[0].normal;
-                Vector2 direction = moveDirection - Vector2.Dot(moveDirection, normal) * normal;
-                moveDirection = direction.normalized;
-            }
+            collisionProcessOnGround(in collision, ref onGroundStay);
         }
     }
 
@@ -88,6 +62,24 @@ public class GroundChecker : MonoBehaviour
         {
             onGroundExit = true;
             moveDirection = Vector2.right;
+        }
+    }
+    
+    //地面に対する処理
+    private void collisionProcessOnGround(in Collider2D collision, ref bool onGroundEnterOrStay)
+    {
+        ContactPoint2D[] contacts = new ContactPoint2D[4];
+        int contactsNum = collision.GetContacts(contacts);
+        if (contactsNum > 0)
+        {
+            Vector2 normal = contacts[0].normal;
+            float angle = Vector2.Angle(new Vector2(1, 0), normal);
+            if (45 <= angle && angle <= 135)
+            {
+                Vector2 direction = moveDirection - Vector2.Dot(moveDirection, normal) * normal;
+                moveDirection = direction.normalized;
+                onGroundEnterOrStay = true;
+            }
         }
     }
 }

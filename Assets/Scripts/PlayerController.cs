@@ -5,19 +5,26 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     public GroundChecker groundCheck;
+    public RoofChecker roofCheck;
     public float maxHorizontalSpeed;
     public float horizontalAccel;
     public float horizontalStopAccel;
     public float gravityAccel;
     public float maxGravitySpeed;
-    public float jumpInitialVelocity;
+    public float JumpVelocity;
+    public float jumpUpTime;
 
     private bool onGround;
+    private bool preOnGround;
+    private bool onRoof;
     private Rigidbody2D rb;
     private Vector2 horizonMoveDirection;
     private Vector2 velocity;
     private float horizonSpeed;
     private bool jumped;
+    private bool jumping;
+    private float jumpTimeProgress;
+    private bool onRoofAnd90;
 
     // Start is called before the first frame update
     void Start()
@@ -26,18 +33,29 @@ public class PlayerController : MonoBehaviour
         velocity = rb.velocity;
         horizonSpeed = 0;
         jumped = false;
+        jumpTimeProgress = 0;
+        jumping = false;
+        preOnGround = false;
     }
 
     // Update is called once per frame
     void Update()
     {
         onGround = groundCheck.OnGroundCheck();
-        if (groundCheck.getOnGroundEnter()) jumped = false;
+        onRoof = roofCheck.GetOnRoofEnter();
+        onRoofAnd90 = roofCheck.GetOnRoof90();
+        if (!preOnGround && onGround)
+        {
+            jumped = false;
+            jumping = false;
+        }
         horizonMoveDirection = groundCheck.getMoveDirection();
         VelocityUpdate();
+
+        preOnGround = onGround;
     }
 
-    void VelocityUpdate()
+    private void VelocityUpdate()
     {
         float verticalSpeed;
         if (velocity.y == 10) Debug.Log("test");
@@ -83,20 +101,42 @@ public class PlayerController : MonoBehaviour
         {
             if (onGround)
             {
-                velocity = new Vector2(velocity.x, jumpInitialVelocity);
+                velocity = new Vector2(velocity.x, JumpVelocity);
                 horizonSpeed = velocity.x;
                 jumped = true;
+                jumping = true;
+                jumpTimeProgress = 0;
             }
             //else if (jumped && Input.GetButton("Jump"))
             //{
-            //    rb.velocity = new Vector2(rb.velocity.x, jumpInitialVelocity);
+            //    rb.velocity = new Vector2(rb.velocity.x, JumpVelocity);
             //}
+        }
+        else if (Input.GetButton("Jump"))
+        {
+            if (onRoof)
+            {
+                JumpEnd();
+                if (onRoofAnd90)
+                {
+                    velocity = new Vector2(velocity.x, 0);
+                }
+            }
+            else if(!onGround && jumping && jumpTimeProgress <= jumpUpTime)
+            {
+                velocity = new Vector2(velocity.x, JumpVelocity);
+                jumpTimeProgress += Time.deltaTime;
+            }
+        }
+        else if (Input.GetButtonUp("Jump"))
+        {
+            JumpEnd();
         }
 
         rb.velocity = velocity;
     }
 
-    void HorizonUpdate(ref float horizonSpeed)
+    private void HorizonUpdate(ref float horizonSpeed)
     {
         if (-maxHorizontalSpeed < horizonSpeed && horizonSpeed < maxHorizontalSpeed && Input.GetAxis("Horizontal") != 0)
         {
@@ -113,7 +153,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void VerticalUpdate(ref float verticalSpeed)
+    private void VerticalUpdate(ref float verticalSpeed)
     {
         if (!onGround)
         {
@@ -127,5 +167,10 @@ public class PlayerController : MonoBehaviour
         {
             verticalSpeed = 0;
         }
+    }
+
+    private void JumpEnd()
+    {
+        jumping = false;
     }
 }
