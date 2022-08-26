@@ -15,8 +15,14 @@ public class PlayerController : MonoBehaviour
     public float gravityAccel;
     public float maxGravitySpeed;
 
-    public float JumpVelocity;
+    public float jumpVelocity;
     public float jumpUpTime;
+
+    public float wallClimbSpeed;
+    public float wallVerticalJumpSpeed;
+    public float wallReverseJumpSpeedX;
+    public float wallReverseJumpSpeedY;
+    public float wallJumpedSpeedXRetentionTime;
 
 
     private bool onGround;
@@ -29,6 +35,9 @@ public class PlayerController : MonoBehaviour
 
     private bool onWall;
     private bool onWallAndLeft;
+    private bool onWallJumped;
+    private bool onWallVerticalJumped;
+    private float wallJumpedSpeedXRetentionTimer;
 
     private bool jumped;
     private bool jumping;
@@ -49,7 +58,8 @@ public class PlayerController : MonoBehaviour
         jumpTimeProgress = 0;
         jumping = false;
         preOnGround = false;
-        playerState = PlayerIs.NomalMove;
+        playerState = PlayerIs.NormalMove;
+        onWallJumped = false;
     }
 
     // Update is called once per frame
@@ -68,7 +78,14 @@ public class PlayerController : MonoBehaviour
 
         //HorizonAndGravityUpdate(), JumpUpdate()の実行順で固定
         //左右移動と重力処理
-        HorizonAndGravityUpdate();
+        if (playerState != PlayerIs.onWall)
+        {
+            HorizonAndGravityUpdate();
+        }
+        else if(playerState == PlayerIs.onWall)
+        {
+            WallMoveUpdate();
+        }
 
         //ジャンプ処理
         JumpUpdate();
@@ -84,7 +101,44 @@ public class PlayerController : MonoBehaviour
 
     private void JumpStart()
     {
-        velocity = new Vector2(velocity.x, JumpVelocity);
+        onWallJumped = false;
+        onWallVerticalJumped = false;
+        if (playerState == PlayerIs.NormalMove)
+        {
+            velocity = new Vector2(velocity.x, jumpVelocity);
+        }
+        else if(playerState == PlayerIs.onWall)
+        {
+            playerState = PlayerIs.NormalMove;
+            onWallJumped = true;
+            if (onWallAndLeft)
+            {
+                if(Input.GetAxis("Horizontal") == -1)
+                {
+                    velocity = new Vector2(-wallReverseJumpSpeedX, wallReverseJumpSpeedY);
+                    horizonSpeed = -wallReverseJumpSpeedX;
+                }
+                else
+                {
+                    onWallVerticalJumped = true;
+                    velocity.y = wallVerticalJumpSpeed;
+                }
+            }
+            else
+            {
+                if(Input.GetAxis("Horizontal") == 1)
+                {
+
+                    velocity = new Vector2(wallReverseJumpSpeedX, wallReverseJumpSpeedY);
+                    horizonSpeed = wallReverseJumpSpeedX;
+                }
+                else
+                {
+                    onWallVerticalJumped = true;
+                    velocity.y = wallVerticalJumpSpeed;
+                }
+            }
+        }
         horizonSpeed = velocity.x;
         jumped = true;
         jumping = true;
@@ -148,14 +202,18 @@ public class PlayerController : MonoBehaviour
         }
         else if (Input.GetButton("Jump"))
         {
-            if (onRoof)
+            if (!onGround && jumping && jumpTimeProgress <= jumpUpTime)
             {
-                JumpEnd();
-            }
-            else if (!onGround && jumping && jumpTimeProgress <= jumpUpTime)
-            {
-                velocity = new Vector2(velocity.x, JumpVelocity);
-                jumpTimeProgress += Time.deltaTime;
+                if (onWallJumped)
+                {
+                    velocity.y = onWallVerticalJumped ? wallVerticalJumpSpeed : wallReverseJumpSpeedY;
+                    jumpTimeProgress += Time.deltaTime;
+                }
+                else
+                {
+                    velocity.y = jumpVelocity;
+                    jumpTimeProgress += Time.deltaTime;
+                }
             }
         }
         else if (Input.GetButtonUp("Jump"))
@@ -173,7 +231,7 @@ public class PlayerController : MonoBehaviour
         //壁処理
         if (!WallUpdate())
         {
-            playerState = PlayerIs.NomalMove;
+            playerState = PlayerIs.NormalMove;
         }
     }
 
@@ -182,25 +240,48 @@ public class PlayerController : MonoBehaviour
         bool ret = false;
         if (!onGround && onWall)
         {
-            ret = true;
-            if (onWallAndLeft)
+            if (onWallAndLeft && Input.GetAxis("Horizontal") == 1|| !onWallAndLeft && Input.GetAxis("Horizontal") == -1)
             {
-                if (Input.GetAxis("Horizontal") == 1)
-                {
-                    playerState = PlayerIs.onWall;
-                    JumpValInit();
-                }
+                
             }
-            else
+            if (onWallAndLeft && horizonSpeed > 0 || !onWallAndLeft && horizonSpeed < 0)
             {
-                if (Input.GetAxis("Horizontal") == -1)
-                {
-                    playerState = PlayerIs.onWall;
-                    JumpValInit();
-                }
+                horizonSpeed = 0;
             }
+            if (playerState == PlayerIs.NormalMove && Input.GetButtonDown("Dash"))                    //PlayerIs.NormalMove -> PlayerIs.onWallとなるときに入るべき所
+            {
+                ret = true;
+                playerState = PlayerIs.onWall;
+                JumpValInit();
+                velocity = new Vector2(0, 0);
+            }
+            else if (playerState == PlayerIs.onWall && Input.GetButton("Dash"))                                                     //playerState == PlayerIs.onWallのときに入るべき所
+            {
+                ret = true;
+            }
+            //if (onWallAndLeft)
+            //{
+            //    if (Input.GetAxis("Horizontal") == 1)
+            //    {
+            //        playerState = PlayerIs.onWall;
+            //        JumpValInit();
+            //    }
+            //}
+            //else
+            //{
+            //    if (Input.GetAxis("Horizontal") == -1)
+            //    {
+            //        playerState = PlayerIs.onWall;
+            //        JumpValInit();
+            //    }
+            //}
         }
         return ret;
+    }
+
+    private void WallMoveUpdate()
+    {
+        velocity.y = wallClimbSpeed * Input.GetAxis("Vertical");
     }
 
     private void GetInformationFromChildren()
@@ -228,7 +309,7 @@ public class PlayerController : MonoBehaviour
 
     private enum PlayerIs
     {
-        NomalMove,
+        NormalMove,
         onWall
     }
 }
