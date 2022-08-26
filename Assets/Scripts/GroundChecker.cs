@@ -72,6 +72,19 @@ public class GroundChecker : MonoBehaviour
         int contactsNum = collision.GetContacts(contacts);
         if (contactsNum > 0)
         {
+            //Vector2 normal = new Vector2(0, 0);
+            //float angle = 0;
+            //for (int i = 0; i < contactsNum; i++)
+            //{
+            //    Vector2 tmpNormal = contacts[i].normal;
+            //    float tmpAngle = Vector2.Angle(new Vector2(1, 0), tmpNormal);
+            //    if(45 <= tmpAngle && tmpAngle <= 135)
+            //    {
+            //        normal = contacts[i].normal;
+            //        angle = tmpAngle;
+            //        break;
+            //    }
+            //}
             Vector2 normal = contacts[0].normal;
             float angle = Vector2.Angle(new Vector2(1, 0), normal);
             if (45 <= angle && angle <= 135)
