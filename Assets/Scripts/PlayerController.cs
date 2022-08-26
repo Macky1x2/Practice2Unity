@@ -142,9 +142,7 @@ public class PlayerController : MonoBehaviour
         {
             if (Input.GetAxis("Horizontal") == -1)
             {
-                JumpFlagsReset();
-                playerState = PlayerIs.NormalMove;
-                onWallJumped = true;
+                WallJumpStartWhenJump();
                 velocity = new Vector2(-wallReverseJumpSpeedX, wallReverseJumpSpeedY);
                 horizonSpeed = -wallReverseJumpSpeedX;
                 ret = true;
@@ -153,9 +151,7 @@ public class PlayerController : MonoBehaviour
             {
                 if (wallStaminaRemain >= wallVerticalJumpStamina)
                 {
-                    JumpFlagsReset();
-                    playerState = PlayerIs.NormalMove;
-                    onWallJumped = true;
+                    WallJumpStartWhenJump();
                     onWallVerticalJumped = true;
                     velocity.y = wallVerticalJumpSpeed;
                     wallStaminaRemain -= wallVerticalJumpStamina;
@@ -167,9 +163,7 @@ public class PlayerController : MonoBehaviour
         {
             if (Input.GetAxis("Horizontal") == 1)
             {
-                JumpFlagsReset();
-                playerState = PlayerIs.NormalMove;
-                onWallJumped = true;
+                WallJumpStartWhenJump();
                 velocity = new Vector2(wallReverseJumpSpeedX, wallReverseJumpSpeedY);
                 horizonSpeed = wallReverseJumpSpeedX;
                 ret = true;
@@ -178,9 +172,7 @@ public class PlayerController : MonoBehaviour
             {
                 if (wallStaminaRemain >= wallVerticalJumpStamina)
                 {
-                    JumpFlagsReset();
-                    playerState = PlayerIs.NormalMove;
-                    onWallJumped = true;
+                    WallJumpStartWhenJump();
                     onWallVerticalJumped = true;
                     velocity.y = wallVerticalJumpSpeed;
                     wallStaminaRemain -= wallVerticalJumpStamina;
@@ -189,6 +181,13 @@ public class PlayerController : MonoBehaviour
             }
         }
         return ret;
+    }
+
+    private void WallJumpStartWhenJump()
+    {
+        JumpFlagsReset();
+        playerState = PlayerIs.NormalMove;
+        onWallJumped = true;
     }
 
     private bool WallSlideJumpStart()
@@ -345,7 +344,7 @@ public class PlayerController : MonoBehaviour
 
             if (wallStaminaRemain > 0)
             {
-                if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && Input.GetButtonDown("Dash"))                    //PlayerIs.NormalMove -> PlayerIs.onWallÇ∆Ç»ÇÈÇ∆Ç´Ç…ì¸ÇÈÇ◊Ç´èä
+                if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && Input.GetButtonDown("Dash"))         //PlayerIs.NormalMove -> PlayerIs.onWallÇ∆Ç»ÇÈÇ∆Ç´Ç…ì¸ÇÈÇ◊Ç´èä
                 {
                     wallStaminaRemain -= Time.deltaTime;
                     ret = true;
@@ -364,22 +363,6 @@ public class PlayerController : MonoBehaviour
                 ret = true;
                 playerState = PlayerIs.onWallSlide;
             }
-            //if (onWallAndLeft)
-            //{
-            //    if (Input.GetAxis("Horizontal") == 1)
-            //    {
-            //        playerState = PlayerIs.onWall;
-            //        JumpValInit();
-            //    }
-            //}
-            //else
-            //{
-            //    if (Input.GetAxis("Horizontal") == -1)
-            //    {
-            //        playerState = PlayerIs.onWall;
-            //        JumpValInit();
-            //    }
-            //}
         }
         return ret;
     }
