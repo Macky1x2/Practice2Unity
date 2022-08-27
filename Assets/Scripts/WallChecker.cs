@@ -32,8 +32,22 @@ public class WallChecker : MonoBehaviour
     public bool OnWallCheck()
     {
         //OnTriggerStay2DはUpdateの前に必ずしも実行されない(FixedUpdateの前に実行されている?)ためonWallExit, onWallが必要
-        if (onWallEnter || onWallStay) onWall = true;
-        else if (onWallExit) onWall = false;
+        //if (onWallEnter || onWallStay)
+        //{
+        //    onWall = true;
+        //}
+        //else if (onWallExit)
+        //{
+        //    onWall = false;
+        //}
+        if (onWallExit)
+        {
+            onWall = false;
+        }
+        else if(onWallEnter || onWallStay)
+        {
+            onWall = true;
+        }
         return onWall;
     }
 
@@ -85,6 +99,7 @@ public class WallChecker : MonoBehaviour
                 float angle = Vector2.Angle(new Vector2(1, 0), normal);
                 if(firstFlag && (angle == 0 || angle == 180))
                 {
+                    //Debug.Log("test");
                     isRightOnWall = false;
                     isLeftOnWall = false;
                     firstFlag = false;

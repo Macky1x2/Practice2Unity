@@ -33,6 +33,8 @@ public class PlayerController : MonoBehaviour
     public float wallSlideMaxSpeed;
     public float wallSlideJumpUpTime;
 
+    public Vector2[] animeOffsetXY;
+
 
     private bool onGround;
     private bool preOnGround;
@@ -51,8 +53,6 @@ public class PlayerController : MonoBehaviour
 
     private bool onWallSlideJumped;
     private float wallSlideJumpedSpeedXRetentionTimer;
-    private bool preOnWallSlide;
-    private bool onWallSlide;
 
     private bool jumped;
     private bool jumping;
@@ -76,7 +76,6 @@ public class PlayerController : MonoBehaviour
         playerState = PlayerIs.NormalMove;
         onWallJumped = false;
         onWallSlideJumped = false;
-        preOnWallSlide = false;
     }
 
     // Update is called once per frame
@@ -84,6 +83,7 @@ public class PlayerController : MonoBehaviour
     {
         GetInformationFromChildren();
         VelocityUpdate();
+        AnimeOffsetUpdate();
 
         KeepPreFlags();
     }
@@ -233,7 +233,7 @@ public class PlayerController : MonoBehaviour
         //←→速度について
         if(!(onWallSlideJumped) || wallSlideJumpedSpeedXRetentionTimer >= wallSlideJumpedSpeedXRetentionTime)         //壁ジャンプしてないか、してから基底時間経過しているという条件
         {
-            if (-maxHorizontalSpeed < horizonSpeed && horizonSpeed < maxHorizontalSpeed && Input.GetAxis("Horizontal") != 0)
+            if (Input.GetAxis("Horizontal") != 0)
             {
                 float deltaSpeed = Input.GetAxis("Horizontal") * horizontalAccel * Time.deltaTime;
                 horizonSpeed += deltaSpeed;
@@ -404,6 +404,7 @@ public class PlayerController : MonoBehaviour
             {
                 if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && Input.GetButtonDown("Dash"))         //PlayerIs.NormalMove -> PlayerIs.onWallとなるときに入るべき所
                 {
+                    //Debug.Log("test");
                     wallStaminaRemain -= Time.deltaTime;
                     ret = true;
                     playerState = PlayerIs.onWall;
@@ -417,7 +418,6 @@ public class PlayerController : MonoBehaviour
                     ret = true;
                 }
             }
-            onWallSlide = false;
             if (!ret && !onGround && (onWallAndLeft && Input.GetAxis("Horizontal") == 1 || onWallAndRight && Input.GetAxis("Horizontal") == -1))
             {
                 ret = true;
@@ -426,12 +426,7 @@ public class PlayerController : MonoBehaviour
                     playerAnimator.SetInteger("playerState", 7);
                 }
                 playerState = PlayerIs.onWallSlide;
-                onWallSlide = true;
             }
-            //else if (!ret && !onGround && preOnWallSlide && !onWallSlide) 
-            //{
-            //    playerAnimator.SetInteger("playerState", 4);
-            //}
         }
         return ret;
     }
@@ -456,6 +451,11 @@ public class PlayerController : MonoBehaviour
         {
             wallSlideJumpedSpeedXRetentionTimer += Time.deltaTime;
         }
+    }
+
+    private void AnimeOffsetUpdate()
+    {
+        playerAnimator.transform.localPosition = new Vector3(animeOffsetXY[playerAnimator.GetInteger("playerState")].x, animeOffsetXY[playerAnimator.GetInteger("playerState")].y, 0);
     }
 
     private void GetInformationFromChildren()
@@ -490,7 +490,6 @@ public class PlayerController : MonoBehaviour
     private void KeepPreFlags()
     {
         preOnGround = onGround;
-        preOnWallSlide = onWallSlide;
     }
     private void AirAnimeSelect()
     {
