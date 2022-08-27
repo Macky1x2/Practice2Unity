@@ -44,6 +44,7 @@ public class PlayerController : MonoBehaviour
     private float wallStaminaRemain;
     private bool onWall;
     private bool onWallAndLeft;
+    private bool onWallAndRight;
     private bool onWallJumped;
     private bool onWallVerticalJumped;
 
@@ -90,7 +91,7 @@ public class PlayerController : MonoBehaviour
 
         //プレイヤーの状態決定
         PlayerStateUpdate();
-
+        
         //HorizonAndGravityUpdate(), JumpUpdate()の実行順で固定
         //左右移動と重力処理
         if (playerState != PlayerIs.onWall)
@@ -219,9 +220,7 @@ public class PlayerController : MonoBehaviour
     private void HorizonAndGravityUpdate()
     {
         float verticalSpeed;
-        if (velocity.y == 10) Debug.Log("test");
         if (rb.velocity.magnitude == 0) horizonSpeed = 0;
-        //horizonSpeed = velocity.x;
         verticalSpeed = velocity.y;
 
         //←→速度について
@@ -337,7 +336,7 @@ public class PlayerController : MonoBehaviour
         bool ret = false;
         if (!onGround && onWall)
         {
-            if (onWallAndLeft && horizonSpeed > 0 || !onWallAndLeft && horizonSpeed < 0)
+            if (onWallAndLeft && horizonSpeed > 0 || onWallAndRight && horizonSpeed < 0)
             {
                 horizonSpeed = 0;
             }
@@ -358,7 +357,7 @@ public class PlayerController : MonoBehaviour
                     ret = true;
                 }
             }
-            if (!ret && (onWallAndLeft && Input.GetAxis("Horizontal") == 1 || !onWallAndLeft && Input.GetAxis("Horizontal") == -1))
+            if (!ret && !onGround && (onWallAndLeft && Input.GetAxis("Horizontal") == 1 || onWallAndRight && Input.GetAxis("Horizontal") == -1))
             {
                 ret = true;
                 playerState = PlayerIs.onWallSlide;
@@ -398,7 +397,8 @@ public class PlayerController : MonoBehaviour
         onRoofAnd90 = roofCheck.GetOnRoof90();
 
         onWall = wallCheck.OnWallCheck();
-        onWallAndLeft = wallCheck.GetIsLeftIfOnWall();
+        onWallAndLeft = wallCheck.GetIsLeftOnWall();
+        onWallAndRight = wallCheck.GetIsRightOnWall();
     }
 
     private void JumpValInit()

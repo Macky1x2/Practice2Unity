@@ -56,9 +56,16 @@ public class RoofChecker : MonoBehaviour
         int contactsNum = collision.GetContacts(contacts);
         if (contactsNum > 0)
         {
-            Vector2 normal = contacts[0].normal;
-            float angle = Vector2.Angle(new Vector2(1, 0), normal);
-            if (angle == 90) onRoof90 = true;
+            for (int i = 0; i < contactsNum; i++)
+            {
+                Vector2 normal = contacts[i].normal;
+                float angle = Vector2.SignedAngle(normal, new Vector2(1, 0));
+                if (angle == -90)
+                {
+                    onRoof90 = true;
+                    break;
+                }
+            }
         }
     }
 }

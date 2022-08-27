@@ -42,7 +42,7 @@ public class GroundChecker : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if(collision.tag == groundTag)
+        if (collision.tag == groundTag)
         {
             collisionProcessOnGround(in collision, ref onGroundEnter);
         }
@@ -60,39 +60,47 @@ public class GroundChecker : MonoBehaviour
     {
         if (collision.tag == groundTag)
         {
-            onGroundExit = true;
-            moveDirection = Vector2.right;
+            collisionExitProcessOnGround();
         }
     }
     
     //’n–Ê‚É‘Î‚·‚éˆ—
     private void collisionProcessOnGround(in Collider2D collision, ref bool onGroundEnterOrStay)
     {
-        ContactPoint2D[] contacts = new ContactPoint2D[4];
+        ContactPoint2D[] contacts = new ContactPoint2D[8];
         int contactsNum = collision.GetContacts(contacts);
         if (contactsNum > 0)
         {
-            //Vector2 normal = new Vector2(0, 0);
-            //float angle = 0;
-            //for (int i = 0; i < contactsNum; i++)
-            //{
-            //    Vector2 tmpNormal = contacts[i].normal;
-            //    float tmpAngle = Vector2.Angle(new Vector2(1, 0), tmpNormal);
-            //    if(45 <= tmpAngle && tmpAngle <= 135)
-            //    {
-            //        normal = contacts[i].normal;
-            //        angle = tmpAngle;
-            //        break;
-            //    }
-            //}
-            Vector2 normal = contacts[0].normal;
-            float angle = Vector2.Angle(new Vector2(1, 0), normal);
+            Vector2 normal = new Vector2(0, 0);
+            float angle = 0;
+            for (int i = 0; i < contactsNum; i++)
+            {
+                Vector2 tmpNormal = contacts[i].normal;
+                float tmpAngle = Vector2.SignedAngle(tmpNormal, new Vector2(1, 0));
+                if (45 <= tmpAngle && tmpAngle <= 135)
+                {
+                    normal = contacts[i].normal;
+                    angle = tmpAngle;
+                    break;
+                }
+            }
+            //Vector2 normal = contacts[0].normal;
+            //float angle = Vector2.Angle(new Vector2(1, 0), normal);
             if (45 <= angle && angle <= 135)
             {
                 Vector2 direction = moveDirection - Vector2.Dot(moveDirection, normal) * normal;
                 moveDirection = direction.normalized;
                 onGroundEnterOrStay = true;
             }
+            else
+            {
+                collisionExitProcessOnGround();
+            }
         }
+    }
+    private void collisionExitProcessOnGround()
+    {
+        onGroundExit = true;
+        moveDirection = Vector2.right;
     }
 }

@@ -7,8 +7,9 @@ public class WallChecker : MonoBehaviour
     private string wallTag;
     private bool onWallEnter, onWallStay, onWallExit;
     private bool onWall;
-    private bool isLeftIfOnWall;
-    
+    private bool isLeftOnWall;
+    private bool isRightOnWall;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -17,7 +18,8 @@ public class WallChecker : MonoBehaviour
         onWallEnter = false;
         onWallStay = false;
         onWallExit = false;
-        isLeftIfOnWall = false;
+        isLeftOnWall = false;
+        isRightOnWall = false;
     }
 
     private void LateUpdate()
@@ -35,9 +37,14 @@ public class WallChecker : MonoBehaviour
         return onWall;
     }
 
-    public bool GetIsLeftIfOnWall()
+    public bool GetIsLeftOnWall()
     {
-        return isLeftIfOnWall;
+        return isLeftOnWall;
+    }
+
+    public bool GetIsRightOnWall()
+    {
+        return isRightOnWall;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -60,7 +67,7 @@ public class WallChecker : MonoBehaviour
     {
         if (collision.tag == wallTag)
         {
-            onWallExit = true;
+            collisionExitProcessOnWall();
         }
     }
 
@@ -71,13 +78,37 @@ public class WallChecker : MonoBehaviour
         int contactsNum = collision.GetContacts(contacts);
         if (contactsNum > 0)
         {
-            Vector2 normal = contacts[0].normal;
-            float angle = Vector2.Angle(new Vector2(1, 0), normal);
-            if (angle == 0 || angle == 180)
+            bool firstFlag = true;
+            for(int i = 0; i < contactsNum; i++)
             {
-                onWallEnterOrStay = true;
-                isLeftIfOnWall = angle == 0;
+                Vector2 normal = contacts[i].normal;
+                float angle = Vector2.Angle(new Vector2(1, 0), normal);
+                if(firstFlag && (angle == 0 || angle == 180))
+                {
+                    isRightOnWall = false;
+                    isLeftOnWall = false;
+                    firstFlag = false;
+                }
+                if (angle == 0)
+                {
+                    onWallEnterOrStay = true;
+                    isLeftOnWall = true;
+                }
+                else if (angle == 180)
+                {
+                    onWallEnterOrStay = true;
+                    isRightOnWall = true;
+                }
+            }
+            if (firstFlag)
+            {
+                collisionExitProcessOnWall();
             }
         }
+    }
+
+    private void collisionExitProcessOnWall()
+    {
+        onWallExit = true;
     }
 }
