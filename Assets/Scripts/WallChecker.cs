@@ -110,5 +110,7 @@ public class WallChecker : MonoBehaviour
     private void collisionExitProcessOnWall()
     {
         onWallExit = true;
+        isLeftOnWall = false;
+        isRightOnWall = false;
     }
 }

@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour
     public GroundChecker groundCheck;
     public RoofChecker roofCheck;
     public WallChecker wallCheck;
+    public Animator playerAnimator;     //playerStateÇ…Ç¬Ç¢ÇƒÅ@0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide
 
     public float maxHorizontalSpeed;
     public float horizontalAccel;
@@ -50,11 +51,13 @@ public class PlayerController : MonoBehaviour
 
     private bool onWallSlideJumped;
     private float wallSlideJumpedSpeedXRetentionTimer;
+    private bool preOnWallSlide;
+    private bool onWallSlide;
 
     private bool jumped;
     private bool jumping;
     private float jumpTimeProgress;
-    
+
     private Rigidbody2D rb;
     private Vector2 velocity;
     private PlayerIs playerState;
@@ -73,6 +76,7 @@ public class PlayerController : MonoBehaviour
         playerState = PlayerIs.NormalMove;
         onWallJumped = false;
         onWallSlideJumped = false;
+        preOnWallSlide = false;
     }
 
     // Update is called once per frame
@@ -81,7 +85,7 @@ public class PlayerController : MonoBehaviour
         GetInformationFromChildren();
         VelocityUpdate();
 
-        preOnGround = onGround;
+        KeepPreFlags();
     }
 
     private void VelocityUpdate()
@@ -117,6 +121,7 @@ public class PlayerController : MonoBehaviour
 
     private void JumpStart()
     {
+        playerAnimator.SetInteger("playerState", 2);
         bool tmpJumped = false;
         if (playerState == PlayerIs.NormalMove) tmpJumped = NormalJumpStart();
         else if (playerState == PlayerIs.onWall) tmpJumped = WallJumpStart();
@@ -195,6 +200,8 @@ public class PlayerController : MonoBehaviour
     {
         JumpFlagsReset();
         onWallSlideJumped = true;
+        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
+        playerAnimator.SetBool("isRight", !playerAnimator.GetBool("isRight"));
         if (Input.GetAxis("Horizontal") == 1)
         {
             velocity = new Vector2(-wallSlideJumpSpeedX, wallSlideJumpSpeedY);
@@ -232,6 +239,27 @@ public class PlayerController : MonoBehaviour
                 horizonSpeed += deltaSpeed;
                 if (horizonSpeed < -maxHorizontalSpeed) horizonSpeed = -maxHorizontalSpeed;
                 if (horizonSpeed > maxHorizontalSpeed) horizonSpeed = maxHorizontalSpeed;
+                bool preAnimeIsRight = playerAnimator.GetBool("isRight");
+                if (preAnimeIsRight)
+                {
+                    if (Input.GetAxis("Horizontal") < 0)
+                    {
+                        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
+                        playerAnimator.SetBool("isRight", false);
+                    }
+                }
+                else
+                {
+                    if (Input.GetAxis("Horizontal") > 0)
+                    {
+                        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
+                        playerAnimator.SetBool("isRight", true);
+                    }
+                }
+                if (playerAnimator.GetInteger("playerState") == 0)
+                {
+                    playerAnimator.SetInteger("playerState", 1);
+                }
             }
             else if (Input.GetAxis("Horizontal") == 0)
             {
@@ -239,6 +267,10 @@ public class PlayerController : MonoBehaviour
                 if (horizonSpeed >= -deltaSpeed && horizonSpeed <= deltaSpeed) horizonSpeed = 0;
                 else horizonSpeed = horizonSpeed >= 0 ? horizonSpeed - deltaSpeed : horizonSpeed + deltaSpeed;
                 if (onGround && !jumped) verticalSpeed = 0;
+                if (playerAnimator.GetInteger("playerState") == 1)
+                {
+                    playerAnimator.SetInteger("playerState", 0);
+                }
             }
         }
 
@@ -248,6 +280,22 @@ public class PlayerController : MonoBehaviour
             float tmpMax;
             if (playerState == PlayerIs.onWallSlide) tmpMax = wallSlideMaxSpeed;
             else tmpMax = maxGravitySpeed;
+
+            if (playerAnimator.GetInteger("playerState") == 2)
+            {
+                if (verticalSpeed>0&& verticalSpeed- gravityAccel * Time.deltaTime <= 0)
+                {
+                    playerAnimator.SetInteger("playerState", 3);
+                }
+            }
+            else if(playerAnimator.GetInteger("playerState") == 3)
+            {
+                if (verticalSpeed == -tmpMax)
+                {
+                    playerAnimator.SetInteger("playerState", 4);
+                }
+            }
+
             if (verticalSpeed > -tmpMax)
             {
                 verticalSpeed -= gravityAccel * Time.deltaTime;
@@ -328,6 +376,17 @@ public class PlayerController : MonoBehaviour
         if (!WallUpdate())
         {
             playerState = PlayerIs.NormalMove;
+            if (playerAnimator.GetInteger("playerState") == 7 || playerAnimator.GetInteger("playerState") == 6 || playerAnimator.GetInteger("playerState") == 5) 
+            {
+                if (onGround)
+                {
+                    playerAnimator.SetInteger("playerState", 0);
+                }
+                else
+                {
+                    AirAnimeSelect();
+                }
+            }
         }
     }
 
@@ -350,6 +409,7 @@ public class PlayerController : MonoBehaviour
                     playerState = PlayerIs.onWall;
                     JumpValInit();
                     velocity = new Vector2(0, 0);
+                    playerAnimator.SetInteger("playerState", 5);
                 }
                 else if (playerState == PlayerIs.onWall && Input.GetButton("Dash"))                                                     //playerState == PlayerIs.onWallÇÃÇ∆Ç´Ç…ì¸ÇÈÇ◊Ç´èä
                 {
@@ -357,11 +417,21 @@ public class PlayerController : MonoBehaviour
                     ret = true;
                 }
             }
+            onWallSlide = false;
             if (!ret && !onGround && (onWallAndLeft && Input.GetAxis("Horizontal") == 1 || onWallAndRight && Input.GetAxis("Horizontal") == -1))
             {
                 ret = true;
+                if(velocity.y < 0)
+                {
+                    playerAnimator.SetInteger("playerState", 7);
+                }
                 playerState = PlayerIs.onWallSlide;
+                onWallSlide = true;
             }
+            //else if (!ret && !onGround && preOnWallSlide && !onWallSlide) 
+            //{
+            //    playerAnimator.SetInteger("playerState", 4);
+            //}
         }
         return ret;
     }
@@ -372,6 +442,11 @@ public class PlayerController : MonoBehaviour
         if (Input.GetAxis("Vertical") == 1)
         {
             wallStaminaRemain -= Time.deltaTime * wallClimbStaminaTimeMultiple;
+            playerAnimator.SetInteger("playerState", 5);
+        }
+        else if(Input.GetAxis("Vertical") == -1 || Input.GetAxis("Vertical") == 0)
+        {
+            playerAnimator.SetInteger("playerState", 6);
         }
     }
 
@@ -390,6 +465,11 @@ public class PlayerController : MonoBehaviour
         {
             JumpValInit();
             wallStaminaRemain = wallStaminaMax;
+            playerAnimator.SetInteger("playerState", 0);
+        }
+        else if(preOnGround && !onGround)
+        {
+            AirAnimeSelect();
         }
         horizonMoveDirection = groundCheck.getMoveDirection();
 
@@ -405,6 +485,17 @@ public class PlayerController : MonoBehaviour
     {
         jumped = false;
         jumping = false;
+    }
+
+    private void KeepPreFlags()
+    {
+        preOnGround = onGround;
+        preOnWallSlide = onWallSlide;
+    }
+    private void AirAnimeSelect()
+    {
+        if (velocity.y > 0) playerAnimator.SetInteger("playerState", 2);
+        else playerAnimator.SetInteger("playerState", 4);
     }
 
 
