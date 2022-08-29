@@ -1,13 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 public class PlayerController : MonoBehaviour
 {
     public GroundChecker groundCheck;
     public RoofChecker roofCheck;
     public WallChecker wallCheck;
-    public Animator playerAnimator;     //playerStateÇ…Ç¬Ç¢ÇƒÅ@0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
+    public Animator playerAnimator;     //playerState„Å´„Å§„ÅÑ„Å¶„ÄÄ0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
 
     public float maxHorizontalSpeed;
     public float horizontalAccel;
@@ -35,6 +36,7 @@ public class PlayerController : MonoBehaviour
 
     public float lightDashSpeed;
     public float lightDashTime;
+    public float putSquareLightSpan;
 
     public Vector2[] animeOffsetXY;
 
@@ -65,6 +67,8 @@ public class PlayerController : MonoBehaviour
     private bool lightDashed;
     private bool lightDashing;
     private float lightDashTimer;
+    private Light2D squareLightPrefabs;
+    private float putSquareLightTimer;
 
     private Rigidbody2D rb;
     private Vector2 velocity;
@@ -84,6 +88,7 @@ public class PlayerController : MonoBehaviour
         playerState = PlayerIs.NormalMove;
         onWallJumped = false;
         onWallSlideJumped = false;
+        squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
     }
 
     // Update is called once per frame
@@ -98,17 +103,17 @@ public class PlayerController : MonoBehaviour
 
     private void VelocityUpdate()
     {
-        //éûä‘ïœêîçXêV
+        //ÊôÇÈñìÂ§âÊï∞Êõ¥Êñ∞
         TimerUpdate();
 
-        //ÉtÉâÉOçXêV
+        //„Éï„É©„Ç∞Êõ¥Êñ∞
         FlagsUpdate();
 
-        //ÉvÉåÉCÉÑÅ[ÇÃèÛë‘åàíË
+        //„Éó„É¨„Ç§„É§„Éº„ÅÆÁä∂ÊÖãÊ±∫ÂÆö
         PlayerStateUpdate();
         
-        //HorizonAndGravityUpdate(), JumpUpdate()ÇÃé¿çsèáÇ≈å≈íË
-        //ç∂âEà⁄ìÆÇ∆èdóÕèàóù
+        //HorizonAndGravityUpdate(), JumpUpdate()„ÅÆÂÆüË°åÈ†Ü„ÅßÂõ∫ÂÆö
+        //Â∑¶Âè≥ÁßªÂãï„Å®ÈáçÂäõÂá¶ÁêÜ
         if (playerState != PlayerIs.onWall && playerState !=PlayerIs.LightDashing)
         {
             HorizonAndGravityUpdate();
@@ -118,13 +123,13 @@ public class PlayerController : MonoBehaviour
             WallMoveUpdate();
         }
 
-        //ÉWÉÉÉìÉvèàóù
+        //„Ç∏„É£„É≥„ÉóÂá¶ÁêÜ
         JumpUpdate();
 
-        //åıÉ_ÉbÉVÉÖ
+        //ÂÖâ„ÉÄ„ÉÉ„Ç∑„É•
         LightDashUpdate();
 
-        //Ç±ÇÃéûì_Ç≈vevlocityÇ…ÇÕÉvÉåÉCÉÑÅ[Ç™éÊÇÈÇ◊Ç´ë¨ìxÇ™ì¸Ç¡ÇƒÇ¢ÇÈ
+        //„Åì„ÅÆÊôÇÁÇπ„Åßvevlocity„Å´„ÅØ„Éó„É¨„Ç§„É§„Éº„ÅåÂèñ„Çã„Åπ„ÅçÈÄüÂ∫¶„ÅåÂÖ•„Å£„Å¶„ÅÑ„Çã
         rb.velocity = velocity;
     }
 
@@ -244,8 +249,8 @@ public class PlayerController : MonoBehaviour
         if (rb.velocity.magnitude == 0) horizonSpeed = 0;
         verticalSpeed = velocity.y;
 
-        //Å©Å®ë¨ìxÇ…Ç¬Ç¢Çƒ
-        if(!(onWallSlideJumped) || wallSlideJumpedSpeedXRetentionTimer >= wallSlideJumpedSpeedXRetentionTime)         //ï«ÉWÉÉÉìÉvÇµÇƒÇ»Ç¢Ç©ÅAÇµÇƒÇ©ÇÁäÓíÍéûä‘åoâﬂÇµÇƒÇ¢ÇÈÇ∆Ç¢Ç§èåè
+        //‚Üê‚ÜíÈÄüÂ∫¶„Å´„Å§„ÅÑ„Å¶
+        if(!(onWallSlideJumped) || wallSlideJumpedSpeedXRetentionTimer >= wallSlideJumpedSpeedXRetentionTime)         //Â£Å„Ç∏„É£„É≥„Éó„Åó„Å¶„Å™„ÅÑ„Åã„ÄÅ„Åó„Å¶„Åã„ÇâÂü∫Â∫ïÊôÇÈñìÁµåÈÅé„Åó„Å¶„ÅÑ„Çã„Å®„ÅÑ„ÅÜÊù°‰ª∂
         {
             if (Input.GetAxis("Horizontal") != 0)
             {
@@ -288,7 +293,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        //èdóÕë¨ìxÇ…Ç¬Ç¢Çƒ
+        //ÈáçÂäõÈÄüÂ∫¶„Å´„Å§„ÅÑ„Å¶
         if (!onGround)
         {
             float tmpMax;
@@ -386,7 +391,7 @@ public class PlayerController : MonoBehaviour
 
     private void PlayerStateUpdate()
     {
-        //ï«èàóù
+        //Â£ÅÂá¶ÁêÜ
         if (playerState != PlayerIs.LightDashing)
         {
             if (!WallUpdate())
@@ -419,7 +424,7 @@ public class PlayerController : MonoBehaviour
 
             if (wallStaminaRemain > 0)
             {
-                if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && Input.GetButtonDown("Dash"))         //PlayerIs.NormalMove -> PlayerIs.onWallÇ∆Ç»ÇÈÇ∆Ç´Ç…ì¸ÇÈÇ◊Ç´èä
+                if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && Input.GetButtonDown("Dash"))         //PlayerIs.NormalMove -> PlayerIs.onWall„Å®„Å™„Çã„Å®„Åç„Å´ÂÖ•„Çã„Åπ„ÅçÊâÄ
                 {
                     //Debug.Log("test");
                     wallStaminaRemain -= Time.deltaTime;
@@ -429,7 +434,7 @@ public class PlayerController : MonoBehaviour
                     velocity = new Vector2(0, 0);
                     playerAnimator.SetInteger("playerState", 5);
                 }
-                else if (playerState == PlayerIs.onWall && Input.GetButton("Dash"))                                                     //playerState == PlayerIs.onWallÇÃÇ∆Ç´Ç…ì¸ÇÈÇ◊Ç´èä
+                else if (playerState == PlayerIs.onWall && Input.GetButton("Dash"))                                                     //playerState == PlayerIs.onWall„ÅÆ„Å®„Åç„Å´ÂÖ•„Çã„Åπ„ÅçÊâÄ
                 {
                     wallStaminaRemain -= Time.deltaTime;
                     ret = true;
@@ -494,12 +499,32 @@ public class PlayerController : MonoBehaviour
         lightDashing = true;
         lightDashTimer = lightDashTime;
         playerAnimator.SetInteger("playerState", 8);
+        Light2D squareLight;
+        squareLight = Instantiate(squareLightPrefabs, this.transform.position, Quaternion.identity);
+        squareLight.transform.localScale = new Vector3(
+            squareLight.transform.localScale.x / squareLight.transform.lossyScale.x,
+            squareLight.transform.localScale.y / squareLight.transform.lossyScale.y,
+            squareLight.transform.localScale.z / squareLight.transform.lossyScale.z
+            );
+        putSquareLightTimer = putSquareLightSpan;
     }
 
     private void LightDashing()
     {
         velocity = lightDashDirection * lightDashSpeed;
         lightDashTimer -= Time.deltaTime;
+        if (putSquareLightTimer <= 0)
+        {
+            Light2D squareLight;
+            squareLight = Instantiate(squareLightPrefabs, this.transform.position, Quaternion.identity);
+            squareLight.transform.localScale = new Vector3(
+                squareLight.transform.localScale.x / squareLight.transform.lossyScale.x,
+                squareLight.transform.localScale.y / squareLight.transform.lossyScale.y,
+                squareLight.transform.localScale.z / squareLight.transform.lossyScale.z
+                );
+            putSquareLightTimer = putSquareLightSpan;
+        }
+        putSquareLightTimer -= Time.deltaTime;
     }
 
     private void LightDashEnd()
