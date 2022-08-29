@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
     public GroundChecker groundCheck;
     public RoofChecker roofCheck;
     public WallChecker wallCheck;
-    public Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide
+    public Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
 
     public float maxHorizontalSpeed;
     public float horizontalAccel;
@@ -33,6 +33,9 @@ public class PlayerController : MonoBehaviour
     public float wallSlideMaxSpeed;
     public float wallSlideJumpUpTime;
 
+    public float lightDashSpeed;
+    public float lightDashTime;
+
     public Vector2[] animeOffsetXY;
 
 
@@ -57,6 +60,11 @@ public class PlayerController : MonoBehaviour
     private bool jumped;
     private bool jumping;
     private float jumpTimeProgress;
+
+    private Vector2 lightDashDirection;
+    private bool lightDashed;
+    private bool lightDashing;
+    private float lightDashTimer;
 
     private Rigidbody2D rb;
     private Vector2 velocity;
@@ -93,12 +101,15 @@ public class PlayerController : MonoBehaviour
         //時間変数更新
         TimerUpdate();
 
+        //フラグ更新
+        FlagsUpdate();
+
         //プレイヤーの状態決定
         PlayerStateUpdate();
         
         //HorizonAndGravityUpdate(), JumpUpdate()の実行順で固定
         //左右移動と重力処理
-        if (playerState != PlayerIs.onWall)
+        if (playerState != PlayerIs.onWall && playerState !=PlayerIs.LightDashing)
         {
             HorizonAndGravityUpdate();
         }
@@ -109,6 +120,9 @@ public class PlayerController : MonoBehaviour
 
         //ジャンプ処理
         JumpUpdate();
+
+        //光ダッシュ
+        LightDashUpdate();
 
         //この時点でvevlocityにはプレイヤーが取るべき速度が入っている
         rb.velocity = velocity;
@@ -373,18 +387,21 @@ public class PlayerController : MonoBehaviour
     private void PlayerStateUpdate()
     {
         //壁処理
-        if (!WallUpdate())
+        if (playerState != PlayerIs.LightDashing)
         {
-            playerState = PlayerIs.NormalMove;
-            if (playerAnimator.GetInteger("playerState") == 7 || playerAnimator.GetInteger("playerState") == 6 || playerAnimator.GetInteger("playerState") == 5) 
+            if (!WallUpdate())
             {
-                if (onGround)
+                playerState = PlayerIs.NormalMove;
+                if (playerAnimator.GetInteger("playerState") == 7 || playerAnimator.GetInteger("playerState") == 6 || playerAnimator.GetInteger("playerState") == 5)
                 {
-                    playerAnimator.SetInteger("playerState", 0);
-                }
-                else
-                {
-                    AirAnimeSelect();
+                    if (onGround)
+                    {
+                        playerAnimator.SetInteger("playerState", 0);
+                    }
+                    else
+                    {
+                        AirAnimeSelect();
+                    }
                 }
             }
         }
@@ -453,6 +470,57 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void LightDashUpdate()
+    {
+        if (!lightDashed && Input.GetButtonDown("LightDash") && !(Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)) 
+        {
+            playerState = PlayerIs.LightDashing;
+            LightDashStart();
+        }
+        else if (lightDashing && Input.GetButton("LightDash") && lightDashTimer > 0)
+        {
+            LightDashing();
+        }
+        else if (lightDashing && (Input.GetButtonUp("LightDash") || lightDashTimer <= 0))
+        {
+            LightDashEnd();
+        }
+    }
+
+    private void LightDashStart()
+    {
+        lightDashDirection = (new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"))).normalized;
+        lightDashed = true;
+        lightDashing = true;
+        lightDashTimer = lightDashTime;
+        playerAnimator.SetInteger("playerState", 8);
+    }
+
+    private void LightDashing()
+    {
+        velocity = lightDashDirection * lightDashSpeed;
+        lightDashTimer -= Time.deltaTime;
+    }
+
+    private void LightDashEnd()
+    {
+        playerState = PlayerIs.NormalMove;
+        lightDashing = false;
+        if (lightDashDirection.x > 0) horizonSpeed = maxHorizontalSpeed;
+        else if (lightDashDirection.x < 0) horizonSpeed = -maxHorizontalSpeed;
+        else horizonSpeed = 0;
+        if (onGround)
+        {
+            if (horizonSpeed == 0) playerAnimator.SetInteger("playerState", 0);
+            else playerAnimator.SetInteger("playerState", 1);
+        }
+        else
+        {
+            if (lightDashDirection.y > 0) playerAnimator.SetInteger("playerState", 2);
+            else playerAnimator.SetInteger("playerState", 4);
+        }
+    }
+
     private void AnimeOffsetUpdate()
     {
         playerAnimator.transform.localPosition = new Vector3(animeOffsetXY[playerAnimator.GetInteger("playerState")].x, animeOffsetXY[playerAnimator.GetInteger("playerState")].y, 0);
@@ -481,10 +549,24 @@ public class PlayerController : MonoBehaviour
         onWallAndRight = wallCheck.GetIsRightOnWall();
     }
 
+    private void FlagsUpdate()
+    {
+        if (onGround && lightDashed && !lightDashing)
+        {
+            LightDashValInit();
+        }
+    }
+
     private void JumpValInit()
     {
         jumped = false;
         jumping = false;
+    }
+
+    private void LightDashValInit()
+    {
+        lightDashed = false;
+        lightDashing = false;
     }
 
     private void KeepPreFlags()
@@ -493,8 +575,11 @@ public class PlayerController : MonoBehaviour
     }
     private void AirAnimeSelect()
     {
-        if (velocity.y > 0) playerAnimator.SetInteger("playerState", 2);
-        else playerAnimator.SetInteger("playerState", 4);
+        if (playerState != PlayerIs.LightDashing)
+        {
+            if (velocity.y > 0) playerAnimator.SetInteger("playerState", 2);
+            else playerAnimator.SetInteger("playerState", 4);
+        }
     }
 
 
@@ -502,6 +587,7 @@ public class PlayerController : MonoBehaviour
     {
         NormalMove,
         onWall,
-        onWallSlide
+        onWallSlide,
+        LightDashing
     }
 }
