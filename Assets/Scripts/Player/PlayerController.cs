@@ -273,6 +273,8 @@ public class PlayerController : MonoBehaviour
         //←→速度について
         if(!(onWallSlideJumped) || wallSlideJumpedSpeedXRetentionTimer >= GetStatusWallSlideJumpedSpeedXRetentionTime())         //壁ジャンプしてないか、してから基底時間経過しているという条件
         {
+            Debug.Log("Horizontal: " + Input.GetAxis("Horizontal"));
+            Debug.Log("Vertical: " + Input.GetAxis("Vertical"));
             if (Input.GetAxis("Horizontal") != 0)
             {
                 float deltaSpeed = Input.GetAxis("Horizontal") * GetStatusHorizontalAccel() * Time.deltaTime;
@@ -539,7 +541,14 @@ public class PlayerController : MonoBehaviour
 
     private void LightDashStart()
     {
-        lightDashDirection = (new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"))).normalized;
+        float directionX, directionY;
+        if (Input.GetAxis("Horizontal") > 0) directionX = 1;
+        else if (Input.GetAxis("Horizontal") < 0) directionX = -1;
+        else directionX = 0;
+        if (Input.GetAxis("Vertical") > 0) directionY = 1;
+        else if (Input.GetAxis("Vertical") < 0) directionY = -1;
+        else directionY = 0;
+        lightDashDirection = (new Vector2(directionX, directionY)).normalized;     //directionX==0&&directionY==0とはならないことが保障されている(必要がある)
         lightDashed = true;
         lightDashing = true;
         lightDashTimer = lightDashTime;
