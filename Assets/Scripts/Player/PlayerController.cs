@@ -8,6 +8,7 @@ public class PlayerController : MonoBehaviour
     public GroundChecker groundCheck;
     public RoofChecker roofCheck;
     public WallChecker wallCheck;
+    public DarksideChecker darksideCheck;
     public Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
 
     public float maxHorizontalSpeed;
@@ -36,6 +37,8 @@ public class PlayerController : MonoBehaviour
 
     public float lightDashSpeed;
     public float lightDashTime;
+    public float lightDashUpEndSpeedY;
+    public float lightDashRLUpEndSpeedY;
     public float putSquareLightSpan;
 
     public Vector2[] animeOffsetXY;
@@ -68,6 +71,7 @@ public class PlayerController : MonoBehaviour
     private bool lightDashing;
     private float lightDashTimer;
     private Light2D squareLightPrefabs;
+    private Light2D squareLightSubPrefabs;
     private float putSquareLightTimer;
 
     private Rigidbody2D rb;
@@ -89,6 +93,7 @@ public class PlayerController : MonoBehaviour
         onWallJumped = false;
         onWallSlideJumped = false;
         squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
+        squareLightSubPrefabs= Resources.Load<Light2D>("Prefabs/Player Light Sub");
     }
 
     // Update is called once per frame
@@ -501,11 +506,9 @@ public class PlayerController : MonoBehaviour
         playerAnimator.SetInteger("playerState", 8);
         Light2D squareLight;
         squareLight = Instantiate(squareLightPrefabs, this.transform.position, Quaternion.identity);
-        squareLight.transform.localScale = new Vector3(
-            squareLight.transform.localScale.x / squareLight.transform.lossyScale.x,
-            squareLight.transform.localScale.y / squareLight.transform.lossyScale.y,
-            squareLight.transform.localScale.z / squareLight.transform.lossyScale.z
-            );
+        ResizeChildTo111(squareLight);
+        squareLight = Instantiate(squareLightSubPrefabs, this.transform.position, Quaternion.identity);
+        ResizeChildTo111(squareLight);
         putSquareLightTimer = putSquareLightSpan;
     }
 
@@ -517,11 +520,9 @@ public class PlayerController : MonoBehaviour
         {
             Light2D squareLight;
             squareLight = Instantiate(squareLightPrefabs, this.transform.position, Quaternion.identity);
-            squareLight.transform.localScale = new Vector3(
-                squareLight.transform.localScale.x / squareLight.transform.lossyScale.x,
-                squareLight.transform.localScale.y / squareLight.transform.lossyScale.y,
-                squareLight.transform.localScale.z / squareLight.transform.lossyScale.z
-                );
+            ResizeChildTo111(squareLight);
+            squareLight = Instantiate(squareLightSubPrefabs, this.transform.position, Quaternion.identity);
+            ResizeChildTo111(squareLight);
             putSquareLightTimer = putSquareLightSpan;
         }
         putSquareLightTimer -= Time.deltaTime;
@@ -534,6 +535,11 @@ public class PlayerController : MonoBehaviour
         if (lightDashDirection.x > 0) horizonSpeed = maxHorizontalSpeed;
         else if (lightDashDirection.x < 0) horizonSpeed = -maxHorizontalSpeed;
         else horizonSpeed = 0;
+        if(lightDashDirection.y > 0)
+        {
+            if (lightDashDirection.x == 0) velocity.y = lightDashUpEndSpeedY;
+            else velocity.y = lightDashRLUpEndSpeedY;
+        }
         if (onGround)
         {
             if (horizonSpeed == 0) playerAnimator.SetInteger("playerState", 0);
@@ -553,25 +559,28 @@ public class PlayerController : MonoBehaviour
 
     private void GetInformationFromChildren()
     {
-        onGround = groundCheck.OnGroundCheck();
+        onGround = groundCheck.IsTriggerCheck();
         if (!preOnGround && onGround)
         {
             JumpValInit();
             wallStaminaRemain = wallStaminaMax;
-            playerAnimator.SetInteger("playerState", 0);
+            if (playerState != PlayerIs.LightDashing)
+            {
+                playerAnimator.SetInteger("playerState", 0);
+            } 
         }
         else if(preOnGround && !onGround)
         {
             AirAnimeSelect();
         }
-        horizonMoveDirection = groundCheck.getMoveDirection();
+        horizonMoveDirection = groundCheck.MoveDirection;
 
         onRoof = roofCheck.GetOnRoofEnter();
         onRoofAnd90 = roofCheck.GetOnRoof90();
 
-        onWall = wallCheck.OnWallCheck();
-        onWallAndLeft = wallCheck.GetIsLeftOnWall();
-        onWallAndRight = wallCheck.GetIsRightOnWall();
+        onWall = wallCheck.IsTriggerCheck();
+        onWallAndLeft = wallCheck.IsLeftOnWall;
+        onWallAndRight = wallCheck.IsRightOnWall;
     }
 
     private void FlagsUpdate()
@@ -580,6 +589,15 @@ public class PlayerController : MonoBehaviour
         {
             LightDashValInit();
         }
+    }
+
+    private void ResizeChildTo111(MonoBehaviour go) 
+    {
+        go.transform.localScale = new Vector3(
+                go.transform.localScale.x / go.transform.lossyScale.x,
+                go.transform.localScale.y / go.transform.lossyScale.y,
+                go.transform.localScale.z / go.transform.lossyScale.z
+                );
     }
 
     private void JumpValInit()

@@ -1,37 +1,148 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class WallChecker : MonoBehaviour
+//public class WallChecker : MonoBehaviour
+//{
+//    private string wallTag;
+//    private bool onWallEnter, onWallStay, onWallExit;
+//    private bool onWall;
+//    private bool isLeftOnWall;
+//    private bool isRightOnWall;
+
+//    // Start is called before the first frame update
+//    void Start()
+//    {
+//        wallTag = "Block";
+//        onWall = false;
+//        onWallEnter = false;
+//        onWallStay = false;
+//        onWallExit = false;
+//        isLeftOnWall = false;
+//        isRightOnWall = false;
+//    }
+
+//    private void LateUpdate()
+//    {
+//        onWallEnter = false;
+//        onWallStay = false;
+//        onWallExit = false;
+//    }
+
+//    public bool OnWallCheck()
+//    {
+//        //OnTriggerStay2DはUpdateの前に必ずしも実行されない(FixedUpdateの前に実行されている?)ためonWallExit, onWallが必要
+//        //if (onWallEnter || onWallStay)
+//        //{
+//        //    onWall = true;
+//        //}
+//        //else if (onWallExit)
+//        //{
+//        //    onWall = false;
+//        //}
+//        if (onWallExit)
+//        {
+//            onWall = false;
+//        }
+//        else if(onWallEnter || onWallStay)
+//        {
+//            onWall = true;
+//        }
+//        return onWall;
+//    }
+
+//    public bool GetIsLeftOnWall()
+//    {
+//        return isLeftOnWall;
+//    }
+
+//    public bool GetIsRightOnWall()
+//    {
+//        return isRightOnWall;
+//    }
+
+//    private void OnTriggerEnter2D(Collider2D collision)
+//    {
+//        if (collision.tag == wallTag)
+//        {
+//            collisionProcessOnWall(in collision, ref onWallEnter);
+//        }
+//    }
+
+//    private void OnTriggerStay2D(Collider2D collision)
+//    {
+//        if (collision.tag == wallTag)
+//        {
+//            collisionProcessOnWall(in collision, ref onWallStay);
+//        }
+//    }
+
+//    private void OnTriggerExit2D(Collider2D collision)
+//    {
+//        if (collision.tag == wallTag)
+//        {
+//            collisionExitProcessOnWall();
+//        }
+//    }
+
+//    //地面に対する処理
+//    private void collisionProcessOnWall(in Collider2D collision, ref bool onWallEnterOrStay)
+//    {
+//        ContactPoint2D[] contacts = new ContactPoint2D[4];
+//        int contactsNum = collision.GetContacts(contacts);
+//        if (contactsNum > 0)
+//        {
+//            bool firstFlag = true;
+//            for(int i = 0; i < contactsNum; i++)
+//            {
+//                Vector2 normal = contacts[i].normal;
+//                float angle = Vector2.Angle(new Vector2(1, 0), normal);
+//                if(firstFlag && (angle == 0 || angle == 180))
+//                {
+//                    //Debug.Log("test");
+//                    isRightOnWall = false;
+//                    isLeftOnWall = false;
+//                    firstFlag = false;
+//                }
+//                if (angle == 0)
+//                {
+//                    onWallEnterOrStay = true;
+//                    isLeftOnWall = true;
+//                }
+//                else if (angle == 180)
+//                {
+//                    onWallEnterOrStay = true;
+//                    isRightOnWall = true;
+//                }
+//            }
+//            if (firstFlag)
+//            {
+//                collisionExitProcessOnWall();
+//            }
+//        }
+//    }
+
+//    private void collisionExitProcessOnWall()
+//    {
+//        onWallExit = true;
+//        isLeftOnWall = false;
+//        isRightOnWall = false;
+//    }
+//}
+
+public class WallChecker : BaseTrigger
 {
-    private string wallTag;
-    private bool onWallEnter, onWallStay, onWallExit;
-    private bool onWall;
     private bool isLeftOnWall;
     private bool isRightOnWall;
 
-    // Start is called before the first frame update
-    void Start()
+
+    new void Start()
     {
-        wallTag = "Block";
-        onWall = false;
-        onWallEnter = false;
-        onWallStay = false;
-        onWallExit = false;
+        base.Start();
         isLeftOnWall = false;
         isRightOnWall = false;
     }
 
-    private void LateUpdate()
+    override public bool IsTriggerCheck()
     {
-        onWallEnter = false;
-        onWallStay = false;
-        onWallExit = false;
-    }
-
-    public bool OnWallCheck()
-    {
-        //OnTriggerStay2DはUpdateの前に必ずしも実行されない(FixedUpdateの前に実行されている?)ためonWallExit, onWallが必要
         //if (onWallEnter || onWallStay)
         //{
         //    onWall = true;
@@ -40,64 +151,29 @@ public class WallChecker : MonoBehaviour
         //{
         //    onWall = false;
         //}
-        if (onWallExit)
+        if (triggerExit)
         {
-            onWall = false;
+            isTrigger = false;
         }
-        else if(onWallEnter || onWallStay)
+        else if (triggerEnter || triggerStay)
         {
-            onWall = true;
+            isTrigger = true;
         }
-        return onWall;
+        return isTrigger;
     }
 
-    public bool GetIsLeftOnWall()
-    {
-        return isLeftOnWall;
-    }
-
-    public bool GetIsRightOnWall()
-    {
-        return isRightOnWall;
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.tag == wallTag)
-        {
-            collisionProcessOnWall(in collision, ref onWallEnter);
-        }
-    }
-
-    private void OnTriggerStay2D(Collider2D collision)
-    {
-        if (collision.tag == wallTag)
-        {
-            collisionProcessOnWall(in collision, ref onWallStay);
-        }
-    }
-
-    private void OnTriggerExit2D(Collider2D collision)
-    {
-        if (collision.tag == wallTag)
-        {
-            collisionExitProcessOnWall();
-        }
-    }
-
-    //地面に対する処理
-    private void collisionProcessOnWall(in Collider2D collision, ref bool onWallEnterOrStay)
+    override protected void collisionProcessInTrigger(in Collider2D collision, ref bool triggerEnterOrStay)
     {
         ContactPoint2D[] contacts = new ContactPoint2D[4];
         int contactsNum = collision.GetContacts(contacts);
         if (contactsNum > 0)
         {
             bool firstFlag = true;
-            for(int i = 0; i < contactsNum; i++)
+            for (int i = 0; i < contactsNum; i++)
             {
                 Vector2 normal = contacts[i].normal;
                 float angle = Vector2.Angle(new Vector2(1, 0), normal);
-                if(firstFlag && (angle == 0 || angle == 180))
+                if (firstFlag && (angle == 0 || angle == 180))
                 {
                     //Debug.Log("test");
                     isRightOnWall = false;
@@ -106,26 +182,42 @@ public class WallChecker : MonoBehaviour
                 }
                 if (angle == 0)
                 {
-                    onWallEnterOrStay = true;
+                    triggerEnterOrStay = true;
                     isLeftOnWall = true;
                 }
                 else if (angle == 180)
                 {
-                    onWallEnterOrStay = true;
+                    triggerEnterOrStay = true;
                     isRightOnWall = true;
                 }
             }
             if (firstFlag)
             {
-                collisionExitProcessOnWall();
+                collisionProcessExitTrigger();
             }
         }
     }
 
-    private void collisionExitProcessOnWall()
+    override protected void collisionProcessExitTrigger()
     {
-        onWallExit = true;
+        triggerExit = true;
         isLeftOnWall = false;
         isRightOnWall = false;
+    }
+
+    public bool IsLeftOnWall
+    {
+        get
+        {
+            return isLeftOnWall;
+        }
+    }
+
+    public bool IsRightOnWall
+    {
+        get
+        {
+            return isRightOnWall;
+        }
     }
 }

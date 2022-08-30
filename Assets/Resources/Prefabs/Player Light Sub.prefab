@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 4978846133240373242}
   - component: {fileID: 4978846133240373241}
-  - component: {fileID: 841926992198830359}
+  - component: {fileID: -3442085111380365106}
   m_Layer: 0
-  m_Name: Player Light
+  m_Name: Player Light Sub
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -48,17 +48,17 @@ MonoBehaviour:
   m_ComponentVersion: 1
   m_LightType: 3
   m_BlendStyleIndex: 0
-  m_FalloffIntensity: 1
+  m_FalloffIntensity: 0.578
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1.25
+  m_Intensity: 1
   m_LightVolumeIntensity: 1
   m_LightVolumeIntensityEnabled: 0
   m_ApplyToSortingLayers: 0f9d157e23fd524947321a4b594e27695f754e0c99a28f1300000000
   m_LightCookieSprite: {fileID: 21300000, guid: 119f93d0bcbf1e743bf5fcf237507d39, type: 3}
   m_DeprecatedPointLightCookieSprite: {fileID: 0}
-  m_LightOrder: 4
+  m_LightOrder: 3
   m_AlphaBlendOnOverlap: 0
-  m_OverlapOperation: 0
+  m_OverlapOperation: 1
   m_NormalMapDistance: 3
   m_NormalMapQuality: 2
   m_UseNormalMap: 0
@@ -100,8 +100,8 @@ MonoBehaviour:
     m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
   m_PointLightInnerAngle: 360
   m_PointLightOuterAngle: 360
-  m_PointLightInnerRadius: 0.12
-  m_PointLightOuterRadius: 3.58
+  m_PointLightInnerRadius: 0
+  m_PointLightOuterRadius: 8.35
   m_ShapeLightParametricSides: 5
   m_ShapeLightParametricAngleOffset: 0
   m_ShapeLightParametricRadius: 1
@@ -112,7 +112,7 @@ MonoBehaviour:
   - {x: 0.5, y: -0.5, z: 0}
   - {x: 0.5, y: 0.5, z: 0}
   - {x: -0.5, y: 0.5, z: 0}
---- !u!114 &841926992198830359
+--- !u!114 &-3442085111380365106
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -121,7 +121,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 4978846133240373243}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5997a853a996a747870388c041dd133, type: 3}
+  m_Script: {fileID: 11500000, guid: 55f1ca85c001509418b44a5e1f6a5874, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  decreaseSpeed: 0.75
