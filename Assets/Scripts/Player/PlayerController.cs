@@ -12,34 +12,50 @@ public class PlayerController : MonoBehaviour
     public Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
 
     public float maxHorizontalSpeed;
+    public float maxHorizontalSpeedDarkside;
     public float horizontalAccel;
+    public float horizontalAccelDarkside;
     public float horizontalStopAccel;
+    public float horizontalStopAccelDarkside;
 
     public float gravityAccel;
     public float maxGravitySpeed;
 
     public float jumpVelocity;
+    public float jumpVelocityDarkside;
     public float jumpUpTime;
+    public float jumpUpTimeDarkside;
 
     public float wallStaminaMax;
     public float wallClimbStaminaTimeMultiple;
     public float wallVerticalJumpStamina;
     public float wallClimbSpeed;
+    public float wallClimbSpeedDarkside;
     public float wallVerticalJumpSpeed;
+    public float wallVerticalJumpSpeedDarkside;
     public float wallReverseJumpSpeedX;
+    public float wallReverseJumpSpeedXDarkside;
     public float wallReverseJumpSpeedY;
+    public float wallReverseJumpSpeedYDarkside;
 
     public float wallSlideJumpSpeedX;
+    public float wallSlideJumpSpeedXDarkside;
     public float wallSlideJumpSpeedY;
+    public float wallSlideJumpSpeedYDarkside;
     public float wallSlideJumpedSpeedXRetentionTime;
+    public float wallSlideJumpedSpeedXRetentionTimeDarkside;
     public float wallSlideMaxSpeed;
     public float wallSlideJumpUpTime;
+    public float wallSlideJumpUpTimeDarkside;
 
     public float lightDashSpeed;
     public float lightDashTime;
     public float lightDashUpEndSpeedY;
     public float lightDashRLUpEndSpeedY;
     public float putSquareLightSpan;
+
+    public float inDarksideReinforceTime;
+    public float inDarksideDeathTime;
 
     public Vector2[] animeOffsetXY;
 
@@ -74,6 +90,9 @@ public class PlayerController : MonoBehaviour
     private Light2D squareLightSubPrefabs;
     private float putSquareLightTimer;
 
+    private bool inDarkside;
+    private float inDarksideTimer;
+
     private Rigidbody2D rb;
     private Vector2 velocity;
     private PlayerIs playerState;
@@ -94,38 +113,35 @@ public class PlayerController : MonoBehaviour
         onWallSlideJumped = false;
         squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
         squareLightSubPrefabs= Resources.Load<Light2D>("Prefabs/Player Light Sub");
+        inDarksideTimer = 0;
     }
 
     // Update is called once per frame
     void Update()
     {
-        GetInformationFromChildren();
-        VelocityUpdate();
-        AnimeOffsetUpdate();
+        GetInformationFromChildren();       //子であるトリガーなどから情報を得てフィールドに代入
+        VelocityUpdate();                   //プレイヤーの速度計算およびrb.velocityへの代入
+        AnimeOffsetUpdate();                //各アニメーションの位置を当たり判定にあわせる
 
-        KeepPreFlags();
+        KeepPreFlags();                     //次のUpdateのために必要な情報を保存
     }
 
     private void VelocityUpdate()
     {
-        //時間変数更新
-        TimerUpdate();
-
         //フラグ更新
         FlagsUpdate();
 
-        //プレイヤーの状態決定
+        //プレイヤーの状態決定(ただし、playerStateの変更はここ以外でも行われている)
         PlayerStateUpdate();
         
-        //HorizonAndGravityUpdate(), JumpUpdate()の実行順で固定
-        //左右移動と重力処理
+        //HorizonAndGravityUpdate(), JumpUpdate()の実行順は固定
         if (playerState != PlayerIs.onWall && playerState !=PlayerIs.LightDashing)
         {
-            HorizonAndGravityUpdate();
+            HorizonAndGravityUpdate();              //左右移動と重力処理
         }
         else if(playerState == PlayerIs.onWall)
         {
-            WallMoveUpdate();
+            WallMoveUpdate();                       //壁つかまり状態での上下移動
         }
 
         //ジャンプ処理
@@ -162,7 +178,7 @@ public class PlayerController : MonoBehaviour
 
     private bool NormalJumpStart() {
         JumpFlagsReset();
-        velocity = new Vector2(velocity.x, jumpVelocity);
+        velocity = new Vector2(velocity.x, GetStatusJumpVelocity());
         return true;
     }
     private bool WallJumpStart()
@@ -173,8 +189,8 @@ public class PlayerController : MonoBehaviour
             if (Input.GetAxis("Horizontal") == -1)
             {
                 WallJumpStartWhenJump();
-                velocity = new Vector2(-wallReverseJumpSpeedX, wallReverseJumpSpeedY);
-                horizonSpeed = -wallReverseJumpSpeedX;
+                velocity = new Vector2(-GetStatusWallReverseJumpSpeedX(), GetStatusWallReverseJumpSpeedY());
+                horizonSpeed = -GetStatusWallReverseJumpSpeedX();
                 ret = true;
             }
             else
@@ -183,7 +199,7 @@ public class PlayerController : MonoBehaviour
                 {
                     WallJumpStartWhenJump();
                     onWallVerticalJumped = true;
-                    velocity.y = wallVerticalJumpSpeed;
+                    velocity.y = GetStatusWallVerticalJumpSpeed();
                     wallStaminaRemain -= wallVerticalJumpStamina;
                     ret = true;
                 }
@@ -194,8 +210,8 @@ public class PlayerController : MonoBehaviour
             if (Input.GetAxis("Horizontal") == 1)
             {
                 WallJumpStartWhenJump();
-                velocity = new Vector2(wallReverseJumpSpeedX, wallReverseJumpSpeedY);
-                horizonSpeed = wallReverseJumpSpeedX;
+                velocity = new Vector2(GetStatusWallReverseJumpSpeedX(), GetStatusWallReverseJumpSpeedY());
+                horizonSpeed = GetStatusWallReverseJumpSpeedX();
                 ret = true;
             }
             else
@@ -204,7 +220,7 @@ public class PlayerController : MonoBehaviour
                 {
                     WallJumpStartWhenJump();
                     onWallVerticalJumped = true;
-                    velocity.y = wallVerticalJumpSpeed;
+                    velocity.y = GetStatusWallVerticalJumpSpeed();
                     wallStaminaRemain -= wallVerticalJumpStamina;
                     ret = true;
                 }
@@ -228,14 +244,14 @@ public class PlayerController : MonoBehaviour
         playerAnimator.SetBool("isRight", !playerAnimator.GetBool("isRight"));
         if (Input.GetAxis("Horizontal") == 1)
         {
-            velocity = new Vector2(-wallSlideJumpSpeedX, wallSlideJumpSpeedY);
-            horizonSpeed = -wallSlideJumpSpeedX;
+            velocity = new Vector2(-GetStatusWallSlideJumpSpeedX(), GetStatusWallSlideJumpSpeedY());
+            horizonSpeed = -GetStatusWallSlideJumpSpeedX();
             wallSlideJumpedSpeedXRetentionTimer = 0;
         }
         else if (Input.GetAxis("Horizontal") == -1)
         {
-            velocity = new Vector2(wallSlideJumpSpeedX, wallSlideJumpSpeedY);
-            horizonSpeed = wallSlideJumpSpeedX;
+            velocity = new Vector2(GetStatusWallSlideJumpSpeedX(), GetStatusWallSlideJumpSpeedY());
+            horizonSpeed = GetStatusWallSlideJumpSpeedX();
             wallSlideJumpedSpeedXRetentionTimer = 0;
         }
         return true;
@@ -255,14 +271,14 @@ public class PlayerController : MonoBehaviour
         verticalSpeed = velocity.y;
 
         //←→速度について
-        if(!(onWallSlideJumped) || wallSlideJumpedSpeedXRetentionTimer >= wallSlideJumpedSpeedXRetentionTime)         //壁ジャンプしてないか、してから基底時間経過しているという条件
+        if(!(onWallSlideJumped) || wallSlideJumpedSpeedXRetentionTimer >= GetStatusWallSlideJumpedSpeedXRetentionTime())         //壁ジャンプしてないか、してから基底時間経過しているという条件
         {
             if (Input.GetAxis("Horizontal") != 0)
             {
-                float deltaSpeed = Input.GetAxis("Horizontal") * horizontalAccel * Time.deltaTime;
+                float deltaSpeed = Input.GetAxis("Horizontal") * GetStatusHorizontalAccel() * Time.deltaTime;
                 horizonSpeed += deltaSpeed;
-                if (horizonSpeed < -maxHorizontalSpeed) horizonSpeed = -maxHorizontalSpeed;
-                if (horizonSpeed > maxHorizontalSpeed) horizonSpeed = maxHorizontalSpeed;
+                if (horizonSpeed < -GetStatusMaxHorizontalSpeed()) horizonSpeed = -GetStatusMaxHorizontalSpeed();
+                if (horizonSpeed > GetStatusMaxHorizontalSpeed()) horizonSpeed = GetStatusMaxHorizontalSpeed();
                 bool preAnimeIsRight = playerAnimator.GetBool("isRight");
                 if (preAnimeIsRight)
                 {
@@ -287,7 +303,7 @@ public class PlayerController : MonoBehaviour
             }
             else if (Input.GetAxis("Horizontal") == 0)
             {
-                float deltaSpeed = horizontalStopAccel * Time.deltaTime;
+                float deltaSpeed = GetStatusHorizontalStopAccel() * Time.deltaTime;
                 if (horizonSpeed >= -deltaSpeed && horizonSpeed <= deltaSpeed) horizonSpeed = 0;
                 else horizonSpeed = horizonSpeed >= 0 ? horizonSpeed - deltaSpeed : horizonSpeed + deltaSpeed;
                 if (onGround && !jumped) verticalSpeed = 0;
@@ -360,26 +376,38 @@ public class PlayerController : MonoBehaviour
             {
                 if (onWallJumped)
                 {
-                    if(jumpTimeProgress <= jumpUpTime)
+                    if(jumpTimeProgress <= GetStatusJumpUpTime())
                     {
-                        velocity.y = onWallVerticalJumped ? wallVerticalJumpSpeed : wallReverseJumpSpeedY;
+                        velocity.y = onWallVerticalJumped ? GetStatusWallVerticalJumpSpeed() : GetStatusWallReverseJumpSpeedY();
                         jumpTimeProgress += Time.deltaTime;
+                    }
+                    else
+                    {
+                        JumpEnd();
                     }
                 }
                 else if (onWallSlideJumped)
                 {
                     if(jumpTimeProgress <= wallSlideJumpUpTime)
                     {
-                        velocity.y = wallSlideJumpSpeedY;
+                        velocity.y = GetStatusWallSlideJumpSpeedY();
                         jumpTimeProgress += Time.deltaTime;
+                    }
+                    else
+                    {
+                        JumpEnd();
                     }
                 }
                 else
                 {
-                    if(jumpTimeProgress <= jumpUpTime)
+                    if(jumpTimeProgress <= GetStatusJumpUpTime())
                     {
-                        velocity.y = jumpVelocity;
+                        velocity.y = GetStatusJumpVelocity();
                         jumpTimeProgress += Time.deltaTime;
+                    }
+                    else
+                    {
+                        JumpEnd();
                     }
                 }
             }
@@ -399,7 +427,7 @@ public class PlayerController : MonoBehaviour
         //壁処理
         if (playerState != PlayerIs.LightDashing)
         {
-            if (!WallUpdate())
+            if (!WallUpdate())                  //壁つかまり状態にも、壁ずり状態にもならなかったなら入る
             {
                 playerState = PlayerIs.NormalMove;
                 if (playerAnimator.GetInteger("playerState") == 7 || playerAnimator.GetInteger("playerState") == 6 || playerAnimator.GetInteger("playerState") == 5)
@@ -460,7 +488,7 @@ public class PlayerController : MonoBehaviour
 
     private void WallMoveUpdate()
     {
-        velocity.y = wallClimbSpeed * Input.GetAxis("Vertical");
+        velocity.y = GetStatusWallClimbSpeed() * Input.GetAxis("Vertical");
         if (Input.GetAxis("Vertical") == 1)
         {
             wallStaminaRemain -= Time.deltaTime * wallClimbStaminaTimeMultiple;
@@ -474,10 +502,22 @@ public class PlayerController : MonoBehaviour
 
     private void TimerUpdate()
     {
+        //壁
         if (onWallSlideJumped)
         {
             wallSlideJumpedSpeedXRetentionTimer += Time.deltaTime;
         }
+
+        //闇
+        if (inDarkside)
+        {
+            inDarksideTimer += Time.deltaTime;
+        }
+        else
+        {
+            inDarksideTimer = Mathf.Max(0, inDarksideTimer - Time.deltaTime);
+        }
+        Debug.Log(inDarksideTimer);
     }
 
     private void LightDashUpdate()
@@ -532,8 +572,8 @@ public class PlayerController : MonoBehaviour
     {
         playerState = PlayerIs.NormalMove;
         lightDashing = false;
-        if (lightDashDirection.x > 0) horizonSpeed = maxHorizontalSpeed;
-        else if (lightDashDirection.x < 0) horizonSpeed = -maxHorizontalSpeed;
+        if (lightDashDirection.x > 0) horizonSpeed = GetStatusMaxHorizontalSpeed();
+        else if (lightDashDirection.x < 0) horizonSpeed = -GetStatusMaxHorizontalSpeed();
         else horizonSpeed = 0;
         if(lightDashDirection.y > 0)
         {
@@ -559,11 +599,12 @@ public class PlayerController : MonoBehaviour
 
     private void GetInformationFromChildren()
     {
+        //地面
         onGround = groundCheck.IsTriggerCheck();
         if (!preOnGround && onGround)
         {
-            JumpValInit();
-            wallStaminaRemain = wallStaminaMax;
+            JumpValInit();                                      //ジャンプ回復
+            wallStaminaRemain = wallStaminaMax;                 //壁スタミナ回復
             if (playerState != PlayerIs.LightDashing)
             {
                 playerAnimator.SetInteger("playerState", 0);
@@ -571,16 +612,24 @@ public class PlayerController : MonoBehaviour
         }
         else if(preOnGround && !onGround)
         {
-            AirAnimeSelect();
+            AirAnimeSelect();                                   //空中用のアニメーションに移る
         }
         horizonMoveDirection = groundCheck.MoveDirection;
 
+        //天井
         onRoof = roofCheck.GetOnRoofEnter();
         onRoofAnd90 = roofCheck.GetOnRoof90();
 
+        //壁
         onWall = wallCheck.IsTriggerCheck();
         onWallAndLeft = wallCheck.IsLeftOnWall;
         onWallAndRight = wallCheck.IsRightOnWall;
+
+        //闇
+        inDarkside = darksideCheck.IsTriggerCheck();
+
+        //時間変数更新(ただし、時間変数の変更はここ以外でも存在する)
+        TimerUpdate();
     }
 
     private void FlagsUpdate()
@@ -623,6 +672,82 @@ public class PlayerController : MonoBehaviour
             if (velocity.y > 0) playerAnimator.SetInteger("playerState", 2);
             else playerAnimator.SetInteger("playerState", 4);
         }
+    }
+
+    private T GetStatusByInDarksideTimer<T>(in T normal, in T darkside)
+    {
+        if (inDarksideTimer < inDarksideReinforceTime)
+        {
+            return normal;
+        }
+        else if (inDarksideTimer < inDarksideDeathTime)
+        {
+            return darkside;
+        }
+        else
+        {
+            return darkside;     //ここに入ったならプレイヤーは死ぬ必要がある
+        }
+    }
+
+    private float GetStatusHorizontalAccel()
+    {
+        return GetStatusByInDarksideTimer<float>(in horizontalAccel, in horizontalAccelDarkside);
+    }
+
+    private float GetStatusMaxHorizontalSpeed()
+    {
+        return GetStatusByInDarksideTimer<float>(in maxHorizontalSpeed, in maxHorizontalSpeedDarkside);
+    }
+
+    private float GetStatusHorizontalStopAccel()
+    {
+        return GetStatusByInDarksideTimer<float>(in horizontalStopAccel, in horizontalStopAccelDarkside);
+    }
+
+    private float GetStatusJumpVelocity()
+    {
+        return GetStatusByInDarksideTimer<float>(in jumpVelocity, in jumpVelocityDarkside);
+    }
+
+    private float GetStatusJumpUpTime()
+    {
+        return GetStatusByInDarksideTimer<float>(in jumpUpTime, in jumpUpTimeDarkside);
+    }
+
+    private float GetStatusWallClimbSpeed()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallClimbSpeed, in wallClimbSpeedDarkside);
+    }
+
+    private float GetStatusWallVerticalJumpSpeed()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallVerticalJumpSpeed, in wallVerticalJumpSpeedDarkside);
+    }
+
+    private float GetStatusWallReverseJumpSpeedX()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallReverseJumpSpeedX, in wallReverseJumpSpeedXDarkside);
+    }
+
+    private float GetStatusWallReverseJumpSpeedY()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallReverseJumpSpeedY, in wallReverseJumpSpeedYDarkside);
+    }
+
+    private float GetStatusWallSlideJumpSpeedX()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallSlideJumpSpeedX, in wallSlideJumpSpeedXDarkside);
+    }
+
+    private float GetStatusWallSlideJumpSpeedY()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallSlideJumpSpeedY, in wallSlideJumpSpeedYDarkside);
+    }
+
+    private float GetStatusWallSlideJumpedSpeedXRetentionTime()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallSlideJumpedSpeedXRetentionTime, in wallSlideJumpedSpeedXRetentionTimeDarkside);
     }
 
 

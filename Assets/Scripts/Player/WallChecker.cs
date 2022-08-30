@@ -1,5 +1,99 @@
 using UnityEngine;
 
+public class WallChecker : BaseTrigger
+{
+    private bool isLeftOnWall;
+    private bool isRightOnWall;
+
+
+    new void Start()
+    {
+        base.Start();
+        isLeftOnWall = false;
+        isRightOnWall = false;
+    }
+
+    override public bool IsTriggerCheck()
+    {
+        //if (onWallEnter || onWallStay)
+        //{
+        //    onWall = true;
+        //}
+        //else if (onWallExit)
+        //{
+        //    onWall = false;
+        //}
+        if (triggerExit)
+        {
+            isTrigger = false;
+        }
+        else if (triggerEnter || triggerStay)
+        {
+            isTrigger = true;
+        }
+        return isTrigger;
+    }
+
+    override protected void collisionProcessInTrigger(in Collider2D collision, ref bool triggerEnterOrStay)
+    {
+        ContactPoint2D[] contacts = new ContactPoint2D[4];
+        int contactsNum = collision.GetContacts(contacts);
+        if (contactsNum > 0)
+        {
+            bool firstFlag = true;
+            for (int i = 0; i < contactsNum; i++)
+            {
+                Vector2 normal = contacts[i].normal;
+                float angle = Vector2.Angle(new Vector2(1, 0), normal);
+                if (firstFlag && (angle == 0 || angle == 180))
+                {
+                    //Debug.Log("test");
+                    isRightOnWall = false;
+                    isLeftOnWall = false;
+                    firstFlag = false;
+                }
+                if (angle == 0)
+                {
+                    triggerEnterOrStay = true;
+                    isLeftOnWall = true;
+                }
+                else if (angle == 180)
+                {
+                    triggerEnterOrStay = true;
+                    isRightOnWall = true;
+                }
+            }
+            if (firstFlag)
+            {
+                collisionProcessExitTrigger();
+            }
+        }
+    }
+
+    override protected void collisionProcessExitTrigger()
+    {
+        triggerExit = true;
+        isLeftOnWall = false;
+        isRightOnWall = false;
+    }
+
+    public bool IsLeftOnWall
+    {
+        get
+        {
+            return isLeftOnWall;
+        }
+    }
+
+    public bool IsRightOnWall
+    {
+        get
+        {
+            return isRightOnWall;
+        }
+    }
+}
+
 //public class WallChecker : MonoBehaviour
 //{
 //    private string wallTag;
@@ -127,97 +221,3 @@ using UnityEngine;
 //        isRightOnWall = false;
 //    }
 //}
-
-public class WallChecker : BaseTrigger
-{
-    private bool isLeftOnWall;
-    private bool isRightOnWall;
-
-
-    new void Start()
-    {
-        base.Start();
-        isLeftOnWall = false;
-        isRightOnWall = false;
-    }
-
-    override public bool IsTriggerCheck()
-    {
-        //if (onWallEnter || onWallStay)
-        //{
-        //    onWall = true;
-        //}
-        //else if (onWallExit)
-        //{
-        //    onWall = false;
-        //}
-        if (triggerExit)
-        {
-            isTrigger = false;
-        }
-        else if (triggerEnter || triggerStay)
-        {
-            isTrigger = true;
-        }
-        return isTrigger;
-    }
-
-    override protected void collisionProcessInTrigger(in Collider2D collision, ref bool triggerEnterOrStay)
-    {
-        ContactPoint2D[] contacts = new ContactPoint2D[4];
-        int contactsNum = collision.GetContacts(contacts);
-        if (contactsNum > 0)
-        {
-            bool firstFlag = true;
-            for (int i = 0; i < contactsNum; i++)
-            {
-                Vector2 normal = contacts[i].normal;
-                float angle = Vector2.Angle(new Vector2(1, 0), normal);
-                if (firstFlag && (angle == 0 || angle == 180))
-                {
-                    //Debug.Log("test");
-                    isRightOnWall = false;
-                    isLeftOnWall = false;
-                    firstFlag = false;
-                }
-                if (angle == 0)
-                {
-                    triggerEnterOrStay = true;
-                    isLeftOnWall = true;
-                }
-                else if (angle == 180)
-                {
-                    triggerEnterOrStay = true;
-                    isRightOnWall = true;
-                }
-            }
-            if (firstFlag)
-            {
-                collisionProcessExitTrigger();
-            }
-        }
-    }
-
-    override protected void collisionProcessExitTrigger()
-    {
-        triggerExit = true;
-        isLeftOnWall = false;
-        isRightOnWall = false;
-    }
-
-    public bool IsLeftOnWall
-    {
-        get
-        {
-            return isLeftOnWall;
-        }
-    }
-
-    public bool IsRightOnWall
-    {
-        get
-        {
-            return isRightOnWall;
-        }
-    }
-}

@@ -1,5 +1,66 @@
 using UnityEngine;
 
+public class GroundChecker : BaseTrigger
+{
+    private Vector2 moveDirection;
+
+
+    // Start is called before the first frame update
+    new void Start()
+    {
+        base.Start();
+        moveDirection = Vector2.right;
+    }
+
+    override protected void collisionProcessInTrigger(in Collider2D collision, ref bool triggerEnterOrStay)
+    {
+        ContactPoint2D[] contacts = new ContactPoint2D[8];
+        int contactsNum = collision.GetContacts(contacts);
+        if (contactsNum > 0)
+        {
+            Vector2 normal = new Vector2(0, 0);
+            float angle = 0;
+            for (int i = 0; i < contactsNum; i++)
+            {
+                Vector2 tmpNormal = contacts[i].normal;
+                float tmpAngle = Vector2.SignedAngle(tmpNormal, new Vector2(1, 0));
+                if (45 <= tmpAngle && tmpAngle <= 135)
+                {
+                    normal = contacts[i].normal;
+                    angle = tmpAngle;
+                    break;
+                }
+            }
+            //Vector2 normal = contacts[0].normal;
+            //float angle = Vector2.Angle(new Vector2(1, 0), normal);
+            if (45 <= angle && angle <= 135)
+            {
+                Vector2 direction = moveDirection - Vector2.Dot(moveDirection, normal) * normal;
+                moveDirection = direction.normalized;
+                triggerEnterOrStay = true;
+            }
+            else
+            {
+                collisionProcessExitTrigger();
+            }
+        }
+    }
+
+    override protected void collisionProcessExitTrigger()
+    {
+        triggerExit = true;
+        moveDirection = Vector2.right;
+    }
+
+    public Vector2 MoveDirection
+    {
+        get
+        {
+            return moveDirection;
+        }
+    }
+}
+
 //public class GroundChecker : MonoBehaviour
 //{
 //    private bool onGroundEnter, onGroundStay, onGroundExit;
@@ -102,64 +163,3 @@ using UnityEngine;
 //        moveDirection = Vector2.right;
 //    }
 //}
-
-public class GroundChecker : BaseTrigger
-{
-    private Vector2 moveDirection;
-
-
-    // Start is called before the first frame update
-    new void Start()
-    {
-        base.Start();
-        moveDirection = Vector2.right;
-    }
-
-    override protected void collisionProcessInTrigger(in Collider2D collision, ref bool triggerEnterOrStay)
-    {
-        ContactPoint2D[] contacts = new ContactPoint2D[8];
-        int contactsNum = collision.GetContacts(contacts);
-        if (contactsNum > 0)
-        {
-            Vector2 normal = new Vector2(0, 0);
-            float angle = 0;
-            for (int i = 0; i < contactsNum; i++)
-            {
-                Vector2 tmpNormal = contacts[i].normal;
-                float tmpAngle = Vector2.SignedAngle(tmpNormal, new Vector2(1, 0));
-                if (45 <= tmpAngle && tmpAngle <= 135)
-                {
-                    normal = contacts[i].normal;
-                    angle = tmpAngle;
-                    break;
-                }
-            }
-            //Vector2 normal = contacts[0].normal;
-            //float angle = Vector2.Angle(new Vector2(1, 0), normal);
-            if (45 <= angle && angle <= 135)
-            {
-                Vector2 direction = moveDirection - Vector2.Dot(moveDirection, normal) * normal;
-                moveDirection = direction.normalized;
-                triggerEnterOrStay = true;
-            }
-            else
-            {
-                collisionProcessExitTrigger();
-            }
-        }
-    }
-
-    override protected void collisionProcessExitTrigger()
-    {
-        triggerExit = true;
-        moveDirection = Vector2.right;
-    }
-
-    public Vector2 MoveDirection
-    {
-        get
-        {
-            return moveDirection;
-        }
-    }
-}
