@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     public RoofChecker roofCheck;
     public WallChecker wallCheck;
     public DarksideChecker darksideCheck;
+    public ParticleSystem blackFire;
     public Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
 
     public float maxHorizontalSpeed;
@@ -114,6 +115,7 @@ public class PlayerController : MonoBehaviour
         squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
         squareLightSubPrefabs= Resources.Load<Light2D>("Prefabs/Player Light Sub");
         inDarksideTimer = 0;
+        blackFire.Stop();
     }
 
     // Update is called once per frame
@@ -122,6 +124,7 @@ public class PlayerController : MonoBehaviour
         GetInformationFromChildren();       //子であるトリガーなどから情報を得てフィールドに代入
         VelocityUpdate();                   //プレイヤーの速度計算およびrb.velocityへの代入
         AnimeOffsetUpdate();                //各アニメーションの位置を当たり判定にあわせる
+        EffectsUpdate();                    //エフェクトの更新など(ただし、ここだけではない)
 
         KeepPreFlags();                     //次のUpdateのために必要な情報を保存
     }
@@ -645,6 +648,24 @@ public class PlayerController : MonoBehaviour
         if (onGround && lightDashed && !lightDashing)
         {
             LightDashValInit();
+        }
+    }
+
+    private void EffectsUpdate()
+    {
+        if (inDarksideTimer >= inDarksideReinforceTime)
+        {
+            if (!blackFire.IsAlive())
+            {
+                blackFire.Play();
+            }
+        }
+        else
+        {
+            if (blackFire.IsAlive())
+            {
+                blackFire.Stop();
+            }
         }
     }
 

@@ -73,29 +73,9 @@ public class WallChecker : BaseTrigger
 
     override protected void collisionProcessExitTrigger(in Collider2D collision)
     {
-        //ContactPoint2D[] contacts = new ContactPoint2D[4];
-        //int contactsNum = collision.GetContacts(contacts);
-        //bool flag = false;
-        //for (int i = 0; i < contactsNum; i++)
-        //{
-        //    Vector2 normal = contacts[i].normal;
-        //    float angle = Vector2.Angle(new Vector2(1, 0), normal);
-        //    if(angle == 0 || angle == 180)
-        //    {
-        //        flag = true;
-        //        break;
-        //    }
-        //}
-        //if (flag)
-        //{
-        //    triggerExit = true;
-        //    isLeftOnWall = false;
-        //    isRightOnWall = false;
-        //}
         triggerExit = true;
         isLeftOnWall = false;
         isRightOnWall = false;
-        //Debug.Log("test");
     }
 
     public bool IsLeftOnWall
