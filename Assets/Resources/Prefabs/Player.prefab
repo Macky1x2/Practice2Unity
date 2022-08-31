@@ -582,6 +582,8 @@ MonoBehaviour:
   jumpVelocityDarkside: 15
   jumpUpTime: 0.15
   jumpUpTimeDarkside: 0.23
+  airJumpVelocityDarkside: 13.5
+  airJumpUpTimeDarkside: 0.23
   wallStaminaMax: 15
   wallClimbStaminaTimeMultiple: 6
   wallVerticalJumpStamina: 3
