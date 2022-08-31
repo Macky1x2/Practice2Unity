@@ -9,7 +9,7 @@ public class DarksideChecker : BaseTrigger
         triggerEnterOrStay = true;
     }
 
-    override protected void collisionProcessExitTrigger()
+    override protected void collisionProcessExitTrigger(in Collider2D collision)
     {
         triggerExit = true;
     }

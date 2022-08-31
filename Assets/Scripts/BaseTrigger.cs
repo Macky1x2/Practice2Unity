@@ -53,7 +53,7 @@ public class BaseTrigger : MonoBehaviour
     {
         if (collision.tag == targetTag)
         {
-            collisionProcessExitTrigger();
+            collisionProcessExitTrigger(in collision);
         }
     }
 
@@ -62,7 +62,7 @@ public class BaseTrigger : MonoBehaviour
 
     }
 
-    protected virtual void collisionProcessExitTrigger()
+    protected virtual void collisionProcessExitTrigger(in Collider2D collision)
     {
 
     }

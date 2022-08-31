@@ -15,22 +15,23 @@ public class WallChecker : BaseTrigger
 
     override public bool IsTriggerCheck()
     {
-        //if (onWallEnter || onWallStay)
-        //{
-        //    onWall = true;
-        //}
-        //else if (onWallExit)
-        //{
-        //    onWall = false;
-        //}
-        if (triggerExit)
-        {
-            isTrigger = false;
-        }
-        else if (triggerEnter || triggerStay)
+        if (triggerExit&&(triggerEnter || triggerStay)) Debug.Log("test");
+        if (triggerEnter || triggerStay)
         {
             isTrigger = true;
         }
+        else if (triggerExit)
+        {
+            isTrigger = false;
+        }
+        //if (triggerExit)
+        //{
+        //    isTrigger = false;
+        //}
+        //else if (triggerEnter || triggerStay)
+        //{
+        //    isTrigger = true;
+        //}
         return isTrigger;
     }
 
@@ -45,9 +46,9 @@ public class WallChecker : BaseTrigger
             {
                 Vector2 normal = contacts[i].normal;
                 float angle = Vector2.Angle(new Vector2(1, 0), normal);
+                //Debug.Log(i+": "+angle);
                 if (firstFlag && (angle == 0 || angle == 180))
                 {
-                    //Debug.Log("test");
                     isRightOnWall = false;
                     isLeftOnWall = false;
                     firstFlag = false;
@@ -65,16 +66,36 @@ public class WallChecker : BaseTrigger
             }
             if (firstFlag)
             {
-                collisionProcessExitTrigger();
+                collisionProcessExitTrigger(in collision);
             }
         }
     }
 
-    override protected void collisionProcessExitTrigger()
+    override protected void collisionProcessExitTrigger(in Collider2D collision)
     {
+        //ContactPoint2D[] contacts = new ContactPoint2D[4];
+        //int contactsNum = collision.GetContacts(contacts);
+        //bool flag = false;
+        //for (int i = 0; i < contactsNum; i++)
+        //{
+        //    Vector2 normal = contacts[i].normal;
+        //    float angle = Vector2.Angle(new Vector2(1, 0), normal);
+        //    if(angle == 0 || angle == 180)
+        //    {
+        //        flag = true;
+        //        break;
+        //    }
+        //}
+        //if (flag)
+        //{
+        //    triggerExit = true;
+        //    isLeftOnWall = false;
+        //    isRightOnWall = false;
+        //}
         triggerExit = true;
         isLeftOnWall = false;
         isRightOnWall = false;
+        //Debug.Log("test");
     }
 
     public bool IsLeftOnWall

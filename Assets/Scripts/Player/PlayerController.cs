@@ -273,8 +273,6 @@ public class PlayerController : MonoBehaviour
         //←→速度について
         if(!(onWallSlideJumped) || wallSlideJumpedSpeedXRetentionTimer >= GetStatusWallSlideJumpedSpeedXRetentionTime())         //壁ジャンプしてないか、してから基底時間経過しているという条件
         {
-            Debug.Log("Horizontal: " + Input.GetAxis("Horizontal"));
-            Debug.Log("Vertical: " + Input.GetAxis("Vertical"));
             if (Input.GetAxis("Horizontal") != 0)
             {
                 float deltaSpeed = Input.GetAxis("Horizontal") * GetStatusHorizontalAccel() * Time.deltaTime;
@@ -450,6 +448,8 @@ public class PlayerController : MonoBehaviour
     private bool WallUpdate()
     {
         bool ret = false;
+        //if(!Input.GetButton("Dash")) Debug.Log("test");
+
         if (!onGround && onWall)
         {
             if (onWallAndLeft && horizonSpeed > 0 || onWallAndRight && horizonSpeed < 0)
@@ -461,7 +461,6 @@ public class PlayerController : MonoBehaviour
             {
                 if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && Input.GetButtonDown("Dash"))         //PlayerIs.NormalMove -> PlayerIs.onWallとなるときに入るべき所
                 {
-                    //Debug.Log("test");
                     wallStaminaRemain -= Time.deltaTime;
                     ret = true;
                     playerState = PlayerIs.onWall;
@@ -519,7 +518,7 @@ public class PlayerController : MonoBehaviour
         {
             inDarksideTimer = Mathf.Max(0, inDarksideTimer - Time.deltaTime);
         }
-        Debug.Log(inDarksideTimer);
+        //Debug.Log(inDarksideTimer);
     }
 
     private void LightDashUpdate()

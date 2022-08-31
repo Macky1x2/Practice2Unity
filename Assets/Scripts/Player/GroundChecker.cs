@@ -41,12 +41,12 @@ public class GroundChecker : BaseTrigger
             }
             else
             {
-                collisionProcessExitTrigger();
+                collisionProcessExitTrigger(collision);
             }
         }
     }
 
-    override protected void collisionProcessExitTrigger()
+    override protected void collisionProcessExitTrigger(in Collider2D collision)
     {
         triggerExit = true;
         moveDirection = Vector2.right;
