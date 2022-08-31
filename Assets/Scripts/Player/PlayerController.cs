@@ -27,6 +27,9 @@ public class PlayerController : MonoBehaviour
     public float jumpUpTime;
     public float jumpUpTimeDarkside;
 
+    public float airJumpVelocityDarkside;
+    public float airJumpUpTimeDarkside;
+
     public float wallStaminaMax;
     public float wallClimbStaminaTimeMultiple;
     public float wallVerticalJumpStamina;
@@ -110,7 +113,7 @@ public class PlayerController : MonoBehaviour
         preOnGround = false;
         playerState = PlayerIs.NormalMove;
         playerDarkState = PlayerDarkIs.NonDark;
-        onWallSlideJumped = false;
+        WallSlideJumpValsReset();
         squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
         squareLightSubPrefabs= Resources.Load<Light2D>("Prefabs/Player Light Sub");
         inDarksideTimer = 0;
@@ -162,12 +165,16 @@ public class PlayerController : MonoBehaviour
         ResetNumForJumping();
     }
 
-    private bool NormalJumpStart() {
-        JumpFlagsReset();
-        velocity = new Vector2(velocity.x, GetStatusJumpVelocity());
-        return true;
+    private void NormalJumpStart() {
+        velocity.y = GetStatusJumpVelocity();
     }
-    
+
+    private void AirJumpStart()
+    {
+        velocity.y = airJumpVelocityDarkside;       //闇状態でしか空中ジャンプはできないためGetStatusは不要
+    }
+
+
     private void WallJumpStartNonVertical()
     {
         if (onWallAndLeft)
@@ -193,13 +200,12 @@ public class PlayerController : MonoBehaviour
 
     private void WallJumpStartWhenJump()
     {
-        JumpFlagsReset();
         playerState = PlayerIs.NormalMove;
     }
 
-    private bool WallSlideJumpStart()
+    private void WallSlideJumpStart()
     {
-        JumpFlagsReset();
+        WallSlideJumpValsReset();
         onWallSlideJumped = true;
         transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
         playerAnimator.SetBool("isRight", !playerAnimator.GetBool("isRight"));
@@ -207,20 +213,18 @@ public class PlayerController : MonoBehaviour
         {
             velocity = new Vector2(-GetStatusWallSlideJumpSpeedX(), GetStatusWallSlideJumpSpeedY());
             horizonSpeed = -GetStatusWallSlideJumpSpeedX();
-            wallSlideJumpedSpeedXRetentionTimer = 0;
         }
         else if (Input.GetAxis("Horizontal") < 0)
         {
             velocity = new Vector2(GetStatusWallSlideJumpSpeedX(), GetStatusWallSlideJumpSpeedY());
             horizonSpeed = GetStatusWallSlideJumpSpeedX();
-            wallSlideJumpedSpeedXRetentionTimer = 0;
         }
-        return true;
     }
 
-    private void JumpFlagsReset()
+    private void WallSlideJumpValsReset()
     {
         onWallSlideJumped = false;
+        wallSlideJumpedSpeedXRetentionTimer = 0;
     }
 
     private void ResetNumForJumping()
@@ -322,23 +326,23 @@ public class PlayerController : MonoBehaviour
         if (Input.GetButtonDown("Jump"))
         {
             bool tmpJumped = false;
-            if (onGround)
+            if (playerState == PlayerIs.NormalMove && onGround)
             {
                 tmpJumped = true;
                 NormalJumpStart();
                 nowJumpIs = JumpIs.NormalJump;
-                //JumpStart();
             }
             else if (playerState == PlayerIs.NormalMove && CanAirJump())
             {
-
+                tmpJumped = true;
+                AirJumpStart();
+                nowJumpIs = JumpIs.AirJump;
             }
             else if (playerState == PlayerIs.onWall && ((onWallAndLeft && Input.GetAxis("Horizontal") < 0) || (!onWallAndLeft && Input.GetAxis("Horizontal") > 0)))
             {
                 tmpJumped = true;
                 WallJumpStartNonVertical();
                 nowJumpIs = JumpIs.WallNonVerticalJump;
-                //JumpStart();
             }
             else if (playerState == PlayerIs.onWall && wallStaminaRemain >= wallVerticalJumpStamina)
             {
@@ -351,7 +355,6 @@ public class PlayerController : MonoBehaviour
                 tmpJumped = true;
                 WallSlideJumpStart();
                 nowJumpIs = JumpIs.WallSlideJump;
-                //JumpStart();
             }
 
             if (tmpJumped)
@@ -374,7 +377,8 @@ public class PlayerController : MonoBehaviour
                 }
                 else if (nowJumpIs == JumpIs.AirJump)
                 {
-
+                    velocity.y = airJumpVelocityDarkside;
+                    tmpJumpUpTime = airJumpUpTimeDarkside;      //闇状態でしか空中ジャンプはできないためGetStatusは不要
                 }
                 else if (nowJumpIs == JumpIs.WallNonVerticalJump)
                 {
@@ -449,7 +453,6 @@ public class PlayerController : MonoBehaviour
     private bool WallUpdate()
     {
         bool ret = false;
-        //if(!Input.GetButton("Dash")) Debug.Log("test");
 
         if (!onGround && onWall)
         {
@@ -519,12 +522,12 @@ public class PlayerController : MonoBehaviour
         {
             inDarksideTimer = Mathf.Max(0, inDarksideTimer - Time.deltaTime);
         }
-        //Debug.Log(inDarksideTimer);
+        Debug.Log(inDarksideTimer);
     }
 
     private void LightDashUpdate()
     {
-        if (!lightDashed && Input.GetButtonDown("LightDash") && !(Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)) 
+        if (!lightDashed && Input.GetButtonDown("LightDash") && playerDarkState == PlayerDarkIs.NonDark && !(Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)) 
         {
             playerState = PlayerIs.LightDashing;
             LightDashStart();
