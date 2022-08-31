@@ -73,15 +73,14 @@ public class PlayerController : MonoBehaviour
     private bool onWall;
     private bool onWallAndLeft;
     private bool onWallAndRight;
-    private bool onWallJumped;
-    private bool onWallVerticalJumped;
 
     private bool onWallSlideJumped;
     private float wallSlideJumpedSpeedXRetentionTimer;
 
     private bool jumped;
-    private bool jumping;
     private float jumpTimeProgress;
+    private int airJumpCounter;
+    private JumpIs nowJumpIs;
 
     private Vector2 lightDashDirection;
     private bool lightDashed;
@@ -97,6 +96,7 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 velocity;
     private PlayerIs playerState;
+    private PlayerDarkIs playerDarkState;
 
 
     // Start is called before the first frame update
@@ -107,21 +107,21 @@ public class PlayerController : MonoBehaviour
         horizonSpeed = 0;
         jumped = false;
         jumpTimeProgress = 0;
-        jumping = false;
         preOnGround = false;
         playerState = PlayerIs.NormalMove;
-        onWallJumped = false;
+        playerDarkState = PlayerDarkIs.NonDark;
         onWallSlideJumped = false;
         squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
         squareLightSubPrefabs= Resources.Load<Light2D>("Prefabs/Player Light Sub");
         inDarksideTimer = 0;
         blackFire.Stop();
+        ResetNumForJumping();
     }
 
     // Update is called once per frame
     void Update()
     {
-        GetInformationFromChildren();       //子であるトリガーなどから情報を得てフィールドに代入
+        GetInformationFromChildren();       //子であるトリガーなどから情報を得てフィールドに代入(Velocityの計算の前にできる限りVelocityに関わる変数を決定しておく)
         VelocityUpdate();                   //プレイヤーの速度計算およびrb.velocityへの代入
         AnimeOffsetUpdate();                //各アニメーションの位置を当たり判定にあわせる
         EffectsUpdate();                    //エフェクトの更新など(ただし、ここだけではない)
@@ -159,24 +159,7 @@ public class PlayerController : MonoBehaviour
 
     private void JumpEnd()
     {
-        jumping = false;
-    }
-
-    private void JumpStart()
-    {
-        playerAnimator.SetInteger("playerState", 2);
-        bool tmpJumped = false;
-        if (playerState == PlayerIs.NormalMove) tmpJumped = NormalJumpStart();
-        else if (playerState == PlayerIs.onWall) tmpJumped = WallJumpStart();
-        else if (playerState == PlayerIs.onWallSlide) tmpJumped = WallSlideJumpStart();
-
-        if (tmpJumped)
-        {
-            horizonSpeed = velocity.x;
-            jumped = true;
-            jumping = true;
-            jumpTimeProgress = 0;
-        }
+        ResetNumForJumping();
     }
 
     private bool NormalJumpStart() {
@@ -184,59 +167,34 @@ public class PlayerController : MonoBehaviour
         velocity = new Vector2(velocity.x, GetStatusJumpVelocity());
         return true;
     }
-    private bool WallJumpStart()
+    
+    private void WallJumpStartNonVertical()
     {
-        bool ret = false;
         if (onWallAndLeft)
         {
-            if (Input.GetAxis("Horizontal") == -1)
-            {
-                WallJumpStartWhenJump();
-                velocity = new Vector2(-GetStatusWallReverseJumpSpeedX(), GetStatusWallReverseJumpSpeedY());
-                horizonSpeed = -GetStatusWallReverseJumpSpeedX();
-                ret = true;
-            }
-            else
-            {
-                if (wallStaminaRemain >= wallVerticalJumpStamina)
-                {
-                    WallJumpStartWhenJump();
-                    onWallVerticalJumped = true;
-                    velocity.y = GetStatusWallVerticalJumpSpeed();
-                    wallStaminaRemain -= wallVerticalJumpStamina;
-                    ret = true;
-                }
-            }
+            WallJumpStartWhenJump();
+            velocity = new Vector2(-GetStatusWallReverseJumpSpeedX(), GetStatusWallReverseJumpSpeedY());
+            horizonSpeed = -GetStatusWallReverseJumpSpeedX();
         }
         else
         {
-            if (Input.GetAxis("Horizontal") == 1)
-            {
-                WallJumpStartWhenJump();
-                velocity = new Vector2(GetStatusWallReverseJumpSpeedX(), GetStatusWallReverseJumpSpeedY());
-                horizonSpeed = GetStatusWallReverseJumpSpeedX();
-                ret = true;
-            }
-            else
-            {
-                if (wallStaminaRemain >= wallVerticalJumpStamina)
-                {
-                    WallJumpStartWhenJump();
-                    onWallVerticalJumped = true;
-                    velocity.y = GetStatusWallVerticalJumpSpeed();
-                    wallStaminaRemain -= wallVerticalJumpStamina;
-                    ret = true;
-                }
-            }
+            WallJumpStartWhenJump();
+            velocity = new Vector2(GetStatusWallReverseJumpSpeedX(), GetStatusWallReverseJumpSpeedY());
+            horizonSpeed = GetStatusWallReverseJumpSpeedX();
         }
-        return ret;
+    }
+
+    private void WallJumpStartVertical()
+    {
+        WallJumpStartWhenJump();
+        velocity.y = GetStatusWallVerticalJumpSpeed();
+        wallStaminaRemain -= wallVerticalJumpStamina;
     }
 
     private void WallJumpStartWhenJump()
     {
         JumpFlagsReset();
         playerState = PlayerIs.NormalMove;
-        onWallJumped = true;
     }
 
     private bool WallSlideJumpStart()
@@ -245,13 +203,13 @@ public class PlayerController : MonoBehaviour
         onWallSlideJumped = true;
         transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
         playerAnimator.SetBool("isRight", !playerAnimator.GetBool("isRight"));
-        if (Input.GetAxis("Horizontal") == 1)
+        if (Input.GetAxis("Horizontal") > 0)
         {
             velocity = new Vector2(-GetStatusWallSlideJumpSpeedX(), GetStatusWallSlideJumpSpeedY());
             horizonSpeed = -GetStatusWallSlideJumpSpeedX();
             wallSlideJumpedSpeedXRetentionTimer = 0;
         }
-        else if (Input.GetAxis("Horizontal") == -1)
+        else if (Input.GetAxis("Horizontal") < 0)
         {
             velocity = new Vector2(GetStatusWallSlideJumpSpeedX(), GetStatusWallSlideJumpSpeedY());
             horizonSpeed = GetStatusWallSlideJumpSpeedX();
@@ -262,9 +220,12 @@ public class PlayerController : MonoBehaviour
 
     private void JumpFlagsReset()
     {
-        onWallJumped = false;
-        onWallVerticalJumped = false;
         onWallSlideJumped = false;
+    }
+
+    private void ResetNumForJumping()
+    {
+        nowJumpIs = JumpIs.None;
     }
 
     private void HorizonAndGravityUpdate()
@@ -360,58 +321,81 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.GetButtonDown("Jump"))
         {
+            bool tmpJumped = false;
             if (onGround)
             {
-                JumpStart();
+                tmpJumped = true;
+                NormalJumpStart();
+                nowJumpIs = JumpIs.NormalJump;
+                //JumpStart();
             }
-            else if (playerState == PlayerIs.onWall)
+            else if (playerState == PlayerIs.NormalMove && CanAirJump())
             {
-                JumpStart();
+
+            }
+            else if (playerState == PlayerIs.onWall && ((onWallAndLeft && Input.GetAxis("Horizontal") < 0) || (!onWallAndLeft && Input.GetAxis("Horizontal") > 0)))
+            {
+                tmpJumped = true;
+                WallJumpStartNonVertical();
+                nowJumpIs = JumpIs.WallNonVerticalJump;
+                //JumpStart();
+            }
+            else if (playerState == PlayerIs.onWall && wallStaminaRemain >= wallVerticalJumpStamina)
+            {
+                tmpJumped = true;
+                WallJumpStartVertical();
+                nowJumpIs = JumpIs.WallVerticalJump;
             }
             else if (playerState == PlayerIs.onWallSlide)
             {
-                JumpStart();
+                tmpJumped = true;
+                WallSlideJumpStart();
+                nowJumpIs = JumpIs.WallSlideJump;
+                //JumpStart();
+            }
+
+            if (tmpJumped)
+            {
+                playerAnimator.SetInteger("playerState", 2);
+                horizonSpeed = velocity.x;
+                jumped = true;
+                jumpTimeProgress = 0;
             }
         }
         else if (Input.GetButton("Jump"))
         {
-            if (!onGround && jumping)
+            if (!onGround && nowJumpIs != JumpIs.None)
             {
-                if (onWallJumped)
+                float tmpJumpUpTime = 0;
+                if(nowJumpIs== JumpIs.NormalJump)
                 {
-                    if(jumpTimeProgress <= GetStatusJumpUpTime())
-                    {
-                        velocity.y = onWallVerticalJumped ? GetStatusWallVerticalJumpSpeed() : GetStatusWallReverseJumpSpeedY();
-                        jumpTimeProgress += Time.deltaTime;
-                    }
-                    else
-                    {
-                        JumpEnd();
-                    }
+                    velocity.y = GetStatusJumpVelocity();
+                    tmpJumpUpTime = GetStatusJumpUpTime();
                 }
-                else if (onWallSlideJumped)
+                else if (nowJumpIs == JumpIs.AirJump)
                 {
-                    if(jumpTimeProgress <= wallSlideJumpUpTime)
-                    {
-                        velocity.y = GetStatusWallSlideJumpSpeedY();
-                        jumpTimeProgress += Time.deltaTime;
-                    }
-                    else
-                    {
-                        JumpEnd();
-                    }
+
                 }
-                else
+                else if (nowJumpIs == JumpIs.WallNonVerticalJump)
                 {
-                    if(jumpTimeProgress <= GetStatusJumpUpTime())
-                    {
-                        velocity.y = GetStatusJumpVelocity();
-                        jumpTimeProgress += Time.deltaTime;
-                    }
-                    else
-                    {
-                        JumpEnd();
-                    }
+                    velocity.y = GetStatusWallReverseJumpSpeedY();
+                    tmpJumpUpTime = GetStatusJumpUpTime();
+                }
+                else if (nowJumpIs == JumpIs.WallVerticalJump)
+                {
+                    velocity.y = GetStatusWallVerticalJumpSpeed();
+                    tmpJumpUpTime = GetStatusJumpUpTime();
+                }
+                else if (nowJumpIs == JumpIs.WallSlideJump)
+                {
+                    velocity.y = GetStatusWallSlideJumpSpeedY();
+                    tmpJumpUpTime = GetStatusWallSlideJumpUpTime();
+                }
+
+                jumpTimeProgress += Time.deltaTime;
+                if (jumpTimeProgress > tmpJumpUpTime)
+                {
+                    JumpEnd();
                 }
             }
         }
@@ -446,6 +430,20 @@ public class PlayerController : MonoBehaviour
                 }
             }
         }
+
+        //闇状態決定
+        if (inDarksideTimer < inDarksideReinforceTime)
+        {
+            playerDarkState = PlayerDarkIs.NonDark;
+        }
+        else if(inDarksideTimer < inDarksideDeathTime)
+        {
+            playerDarkState = PlayerDarkIs.Dark1;
+        }
+        else
+        {
+            playerDarkState = PlayerDarkIs.Death;
+        }
     }
 
     private bool WallUpdate()
@@ -477,7 +475,7 @@ public class PlayerController : MonoBehaviour
                     ret = true;
                 }
             }
-            if (!ret && !onGround && (onWallAndLeft && Input.GetAxis("Horizontal") == 1 || onWallAndRight && Input.GetAxis("Horizontal") == -1))
+            if (!ret && !onGround && (onWallAndLeft && Input.GetAxis("Horizontal") > 0 || onWallAndRight && Input.GetAxis("Horizontal") < 0))
             {
                 ret = true;
                 if(velocity.y < 0)
@@ -614,7 +612,8 @@ public class PlayerController : MonoBehaviour
         onGround = groundCheck.IsTriggerCheck();
         if (!preOnGround && onGround)
         {
-            JumpValInit();                                      //ジャンプ回復
+            JumpValInit();                                      //ジャンプ回復(空中ジャンプは含まない)
+            airJumpCounter = 0;
             wallStaminaRemain = wallStaminaMax;                 //壁スタミナ回復
             if (playerState != PlayerIs.LightDashing)
             {
@@ -669,6 +668,13 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private bool CanAirJump()
+    {
+        return playerDarkState == PlayerDarkIs.Dark1 && airJumpCounter == 0;
+    }
+
+
+
     private void ResizeChildTo111(MonoBehaviour go) 
     {
         go.transform.localScale = new Vector3(
@@ -681,7 +687,7 @@ public class PlayerController : MonoBehaviour
     private void JumpValInit()
     {
         jumped = false;
-        jumping = false;
+        ResetNumForJumping();
     }
 
     private void LightDashValInit()
@@ -779,6 +785,11 @@ public class PlayerController : MonoBehaviour
         return GetStatusByInDarksideTimer<float>(in wallSlideJumpedSpeedXRetentionTime, in wallSlideJumpedSpeedXRetentionTimeDarkside);
     }
 
+    private float GetStatusWallSlideJumpUpTime()
+    {
+        return GetStatusByInDarksideTimer<float>(in wallSlideJumpUpTime, in wallSlideJumpUpTimeDarkside);
+    }
+
 
     private enum PlayerIs
     {
@@ -786,5 +797,22 @@ public class PlayerController : MonoBehaviour
         onWall,
         onWallSlide,
         LightDashing
+    }
+
+    private enum PlayerDarkIs
+    {
+        NonDark,
+        Dark1,
+        Death
+    }
+
+    private enum JumpIs
+    {
+        None,
+        NormalJump,
+        WallNonVerticalJump,
+        WallVerticalJump,
+        WallSlideJump,
+        AirJump
     }
 }
