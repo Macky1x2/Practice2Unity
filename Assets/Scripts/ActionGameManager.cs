@@ -23,10 +23,36 @@ public class ActionGameManager : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    //void Update()
+    //{
+    //    fadeActive = fade.IsActive;
+    //    if(fadeActivePre && !fadeActive)
+    //    {
+    //        fadeEnd = true;
+    //    }
+
+    //    fadeIsBlack = fade.IsBlack;
+    //    if (fadeIsBlackPre && !fadeIsBlack)
+    //    {
+    //        fadeBlackStart = true;
+    //    }
+
+    //    fadeActivePre = fadeActive;
+    //    fadeIsBlackPre = fadeIsBlack;
+    //}
+
+    private void LateUpdate()
     {
+        fadeEnd = false;
+        fadeBlackStart = false;
+    }
+
+    public void FadeUpdate()
+    {
+        fade.FadeUpdate();
+
         fadeActive = fade.IsActive;
-        if(fadeActivePre && !fadeActive)
+        if (fadeActivePre && !fadeActive)
         {
             fadeEnd = true;
         }
@@ -39,12 +65,6 @@ public class ActionGameManager : MonoBehaviour
 
         fadeActivePre = fadeActive;
         fadeIsBlackPre = fadeIsBlack;
-    }
-
-    private void LateUpdate()
-    {
-        fadeEnd = false;
-        fadeBlackStart = false;
     }
 
     public void FadeStart()

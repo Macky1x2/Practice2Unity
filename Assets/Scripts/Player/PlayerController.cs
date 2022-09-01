@@ -748,6 +748,7 @@ public class PlayerController : MonoBehaviour
                     }
                     else
                     {
+                        gameManager.FadeUpdate();
                         if (gameManager.fadeBlackStart)
                         {
                             blackFire.gameObject.SetActive(false);
@@ -762,6 +763,7 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
+                gameManager.FadeUpdate();
                 if (gameManager.fadeEnd)
                 {
                     isDeadFadeInNow = false;

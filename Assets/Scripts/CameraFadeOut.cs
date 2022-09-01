@@ -22,36 +22,64 @@ public class CameraFadeOut : MonoBehaviour
         blackImage = GetComponent<Image>();
     }
 
-    // Update is called once per frame
-    void Update()
+    //// Update is called once per frame
+    //void Update()
+    //{
+    //    if (isActive)
+    //    {
+    //        if (fadeTimer > 0)
+    //        {
+    //            blackImage.color = new Color(0, 0, 0, (fadeTime - fadeTimer) / fadeTime);
+    //        }
+    //        else if (fadeTimer > -fadeTime)
+    //        {
+    //            if (blackTimer > 0)
+    //            {
+    //                isBlack = true;
+    //                blackImage.color = new Color(0, 0, 0, 1);
+    //                blackTimer -= Time.deltaTime;
+    //            }
+    //            else
+    //            {
+    //                isBlack = false;
+    //                blackImage.color = new Color(0, 0, 0, (fadeTime + fadeTimer) / fadeTime);
+    //            }
+    //        }
+    //        else
+    //        {
+    //            blackImage.color = new Color(0, 0, 0, 0);
+    //            isActive = false;
+    //        }
+    //        fadeTimer -= Time.deltaTime;
+    //    }
+    //}
+
+    public void FadeUpdate()
     {
-        if (isActive)
+        if (fadeTimer > 0)
         {
-            if (fadeTimer > 0)
+            blackImage.color = new Color(0, 0, 0, (fadeTime - fadeTimer) / fadeTime);
+        }
+        else if (fadeTimer > -fadeTime)
+        {
+            if (blackTimer > 0)
             {
-                blackImage.color = new Color(0, 0, 0, (fadeTime - fadeTimer) / fadeTime);
-            }
-            else if (fadeTimer > -fadeTime)
-            {
-                if (blackTimer > 0)
-                {
-                    isBlack = true;
-                    blackImage.color = new Color(0, 0, 0, 1);
-                    blackTimer -= Time.deltaTime;
-                }
-                else
-                {
-                    isBlack = false;
-                    blackImage.color = new Color(0, 0, 0, (fadeTime + fadeTimer) / fadeTime);
-                }
+                isBlack = true;
+                blackImage.color = new Color(0, 0, 0, 1);
+                blackTimer -= Time.deltaTime;
             }
             else
             {
-                blackImage.color = new Color(0, 0, 0, 0);
-                isActive = false;
+                isBlack = false;
+                blackImage.color = new Color(0, 0, 0, (fadeTime + fadeTimer) / fadeTime);
             }
-            fadeTimer -= Time.deltaTime;
         }
+        else
+        {
+            blackImage.color = new Color(0, 0, 0, 0);
+            isActive = false;
+        }
+        fadeTimer -= Time.deltaTime;
     }
 
     public void StartFadeOutAndIn()
