@@ -5,10 +5,12 @@ using UnityEngine.Rendering.Universal;
 
 public class PlayerController : MonoBehaviour
 {
+    public ActionGameManager gameManager;
     public GroundChecker groundCheck;
     public RoofChecker roofCheck;
     public WallChecker wallCheck;
-    public DarksideChecker darksideCheck;
+    public DarksideAndDeathChecker darksideCheck;
+    public DarksideAndDeathChecker fallDeathCheck;
     public ParticleSystem blackFire;
     public Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
 
@@ -61,6 +63,9 @@ public class PlayerController : MonoBehaviour
     public float inDarksideReinforceTime;
     public float inDarksideDeathTime;
 
+    [System.NonSerialized] public Vector2 spawnPoint;
+    [System.NonSerialized] public bool iAmKilled = false;
+
     public Vector2[] animeOffsetXY;
 
 
@@ -96,6 +101,12 @@ public class PlayerController : MonoBehaviour
     private bool inDarkside;
     private float inDarksideTimer;
 
+    private bool isDeadByFalling = false;       //死のフラグはRespawnPlayerInit()に含めない
+    private bool isDeadNow = false;
+    private bool isDeadAnimation = false;
+    private bool isDeadFadeInNow = false;
+    private ParticleSystem deadParticle;
+
     private Rigidbody2D rb;
     private Vector2 velocity;
     private PlayerIs playerState;
@@ -106,28 +117,24 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         rb = this.transform.GetComponent<Rigidbody2D>();
-        velocity = rb.velocity;
-        horizonSpeed = 0;
-        jumped = false;
-        jumpTimeProgress = 0;
-        preOnGround = false;
-        playerState = PlayerIs.NormalMove;
-        playerDarkState = PlayerDarkIs.NonDark;
-        WallSlideJumpValsReset();
         squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
         squareLightSubPrefabs= Resources.Load<Light2D>("Prefabs/Player Light Sub");
-        inDarksideTimer = 0;
-        blackFire.Stop();
-        ResetNumForJumping();
+        deadParticle = Resources.Load<ParticleSystem>("Prefabs/Tris Spark");
+        RespawnPlayerInit();
     }
 
     // Update is called once per frame
     void Update()
     {
         GetInformationFromChildren();       //子であるトリガーなどから情報を得てフィールドに代入(Velocityの計算の前にできる限りVelocityに関わる変数を決定しておく)
-        VelocityUpdate();                   //プレイヤーの速度計算およびrb.velocityへの代入
-        AnimeOffsetUpdate();                //各アニメーションの位置を当たり判定にあわせる
-        EffectsUpdate();                    //エフェクトの更新など(ただし、ここだけではない)
+        if (!isDeadNow)
+        {
+            TimerUpdate();                      //時間変数更新(ただし、時間変数の変更はここ以外でも存在する)
+            VelocityUpdate();                   //プレイヤーの速度計算およびrb.velocityへの代入  (ユーザーの操作(Input系)はこのメソッドでのみ存在する)
+            AnimeOffsetUpdate();                //各アニメーションの位置を当たり判定にあわせる
+            EffectsUpdate();                    //エフェクトの更新など(ただし、ここだけではない)
+        }
+        DieAndSpawnUpdate();                //プレイヤーが死ぬか確認　　外的要因による死では、iAmKilledフラグが立ち上っている
 
         KeepPreFlags();                     //次のUpdateのために必要な情報を保存
     }
@@ -172,6 +179,7 @@ public class PlayerController : MonoBehaviour
     private void AirJumpStart()
     {
         velocity.y = airJumpVelocityDarkside;       //闇状態でしか空中ジャンプはできないためGetStatusは不要
+        airJumpCounter++;
     }
 
 
@@ -208,7 +216,6 @@ public class PlayerController : MonoBehaviour
         WallSlideJumpValsReset();
         onWallSlideJumped = true;
         transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
-        playerAnimator.SetBool("isRight", !playerAnimator.GetBool("isRight"));
         if (Input.GetAxis("Horizontal") > 0)
         {
             velocity = new Vector2(-GetStatusWallSlideJumpSpeedX(), GetStatusWallSlideJumpSpeedY());
@@ -247,23 +254,16 @@ public class PlayerController : MonoBehaviour
                 horizonSpeed += deltaSpeed;
                 if (horizonSpeed < -GetStatusMaxHorizontalSpeed()) horizonSpeed = -GetStatusMaxHorizontalSpeed();
                 if (horizonSpeed > GetStatusMaxHorizontalSpeed()) horizonSpeed = GetStatusMaxHorizontalSpeed();
-                bool preAnimeIsRight = playerAnimator.GetBool("isRight");
-                if (preAnimeIsRight)
+
+                if (Input.GetAxis("Horizontal") < 0)
                 {
-                    if (Input.GetAxis("Horizontal") < 0)
-                    {
-                        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
-                        playerAnimator.SetBool("isRight", false);
-                    }
+                    transform.localScale = new Vector3(-0.8f, transform.localScale.y, transform.localScale.z);
                 }
-                else
+                else if (Input.GetAxis("Horizontal") > 0)
                 {
-                    if (Input.GetAxis("Horizontal") > 0)
-                    {
-                        transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, transform.localScale.z);
-                        playerAnimator.SetBool("isRight", true);
-                    }
+                    transform.localScale = new Vector3(0.8f, transform.localScale.y, transform.localScale.z);
                 }
+
                 if (playerAnimator.GetInteger("playerState") == 0)
                 {
                     playerAnimator.SetInteger("playerState", 1);
@@ -522,7 +522,7 @@ public class PlayerController : MonoBehaviour
         {
             inDarksideTimer = Mathf.Max(0, inDarksideTimer - Time.deltaTime);
         }
-        Debug.Log(inDarksideTimer);
+        //Debug.Log(inDarksideTimer);
     }
 
     private void LightDashUpdate()
@@ -641,8 +641,8 @@ public class PlayerController : MonoBehaviour
         //闇
         inDarkside = darksideCheck.IsTriggerCheck();
 
-        //時間変数更新(ただし、時間変数の変更はここ以外でも存在する)
-        TimerUpdate();
+        //落下死
+        isDeadByFalling = fallDeathCheck.IsTriggerCheck();
     }
 
     private void FlagsUpdate()
@@ -710,6 +710,83 @@ public class PlayerController : MonoBehaviour
             if (velocity.y > 0) playerAnimator.SetInteger("playerState", 2);
             else playerAnimator.SetInteger("playerState", 4);
         }
+    }
+
+    private void DieStart()
+    {
+        isDeadNow = true;
+        rb.velocity = Vector2.zero;
+        playerAnimator.SetBool("isDead", true);
+        isDeadAnimation = true;
+    }
+
+    private void DieAndSpawnUpdate()
+    {
+        if (playerDarkState == PlayerDarkIs.Death || isDeadByFalling || isDeadNow)
+        {
+            if (!isDeadFadeInNow)
+            {
+                if (!isDeadAnimation)
+                {
+                    DieStart();
+                }
+                else
+                {
+                    if (playerAnimator.gameObject.activeSelf)
+                    {
+                        float deathAnimationTime = playerAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime;
+                        if (deathAnimationTime < 1 && !isDeadByFalling)     //死亡時アニメーションの位置動かした方が良いかも？
+                        {
+                            //playerAnimator.transform.localPosition(0)
+                        }
+                        else
+                        {
+                            Instantiate(deadParticle, this.transform.position, Quaternion.identity);
+                            playerAnimator.gameObject.SetActive(false);
+                            gameManager.FadeStart();
+                        }
+                    }
+                    else
+                    {
+                        if (gameManager.fadeBlackStart)
+                        {
+                            blackFire.gameObject.SetActive(false);
+                            blackFire.gameObject.SetActive(true);
+                            RespawnPlayerInit();
+                            //rb.MovePosition(spawnPoint);
+                            this.transform.position = spawnPoint;
+                            isDeadFadeInNow = true;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (gameManager.fadeEnd)
+                {
+                    isDeadFadeInNow = false;
+                    isDeadAnimation = false;
+                    isDeadByFalling = false;
+                    isDeadNow = false;
+                }
+            }
+        }
+    }
+
+    private void RespawnPlayerInit()
+    {
+        playerAnimator.gameObject.SetActive(true);
+        velocity = Vector2.zero;
+        horizonSpeed = 0;
+        jumped = false;
+        jumpTimeProgress = 0;
+        preOnGround = false;
+        playerState = PlayerIs.NormalMove;
+        playerDarkState = PlayerDarkIs.NonDark;
+        WallSlideJumpValsReset();
+        inDarksideTimer = 0;
+        blackFire.Stop();
+        ResetNumForJumping();
     }
 
     private T GetStatusByInDarksideTimer<T>(in T normal, in T darkside)

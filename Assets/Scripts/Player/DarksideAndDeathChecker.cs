@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DarksideChecker : BaseTrigger
+public class DarksideAndDeathChecker : BaseTrigger
 {
     override protected void collisionProcessInTrigger(in Collider2D collision, ref bool triggerEnterOrStay)
     {
