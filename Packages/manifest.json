@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.unity.collab-proxy": "1.17.1",
+    "com.unity.collab-proxy": "1.17.2",
     "com.unity.connect.share": "4.2.3",
     "com.unity.editoriterationprofiler": "https://github.com/Unity-Technologies/com.unity.editoriterationprofiler.git",
     "com.unity.feature.2d": "1.0.0",
