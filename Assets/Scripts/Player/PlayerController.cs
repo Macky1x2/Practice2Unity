@@ -28,6 +28,8 @@ public class PlayerController : MonoBehaviour
     public float jumpVelocityDarkside;
     public float jumpUpTime;
     public float jumpUpTimeDarkside;
+    public float jumpCoyoteTime;
+    public float jumpBufferTime;
 
     public float airJumpVelocityDarkside;
     public float airJumpUpTimeDarkside;
@@ -43,6 +45,7 @@ public class PlayerController : MonoBehaviour
     public float wallReverseJumpSpeedXDarkside;
     public float wallReverseJumpSpeedY;
     public float wallReverseJumpSpeedYDarkside;
+    public float onWallBufferTime;
 
     public float wallSlideJumpSpeedX;
     public float wallSlideJumpSpeedXDarkside;
@@ -81,6 +84,7 @@ public class PlayerController : MonoBehaviour
     private bool onWall;
     private bool onWallAndLeft;
     private bool onWallAndRight;
+    private float onWallBufferTimer;
 
     private bool onWallSlideJumped;
     private float wallSlideJumpedSpeedXRetentionTimer;
@@ -89,6 +93,8 @@ public class PlayerController : MonoBehaviour
     private float jumpTimeProgress;
     private int airJumpCounter;
     private JumpIs nowJumpIs;
+    private float jumpCoyoteTimer;
+    private float jumpBufferTimer;
 
     private Vector2 lightDashDirection;
     private bool lightDashed;
@@ -141,6 +147,9 @@ public class PlayerController : MonoBehaviour
 
     private void VelocityUpdate()
     {
+        //入力バッファ更新
+        InputBufferUpdate();
+
         //フラグ更新
         FlagsUpdate();
 
@@ -165,6 +174,37 @@ public class PlayerController : MonoBehaviour
 
         //この時点でvevlocityにはプレイヤーが取るべき速度が入っている
         rb.velocity = velocity;
+    }
+
+    private void InputBufferUpdate()
+    {
+        //壁つかまり入力バッファ
+        if (Input.GetButtonDown("Dash"))
+        {
+            onWallBufferTimer = onWallBufferTime;
+        }
+        else if (Input.GetButton("Dash"))
+        {
+            onWallBufferTimer -= Time.deltaTime;
+        }
+        else if (Input.GetButtonUp("Dash"))
+        {
+            onWallBufferTimer = 0;
+        }
+
+        //ジャンプバッファ
+        if (Input.GetButtonDown("Jump"))
+        {
+            jumpBufferTimer = jumpBufferTime;
+        }
+        else if (Input.GetButton("Jump"))
+        {
+            jumpBufferTimer -= Time.deltaTime;
+        }
+        else if (Input.GetButtonUp("Jump"))
+        {
+            jumpBufferTimer = 0;
+        }
     }
 
     private void JumpEnd()
@@ -257,11 +297,11 @@ public class PlayerController : MonoBehaviour
 
                 if (Input.GetAxis("Horizontal") < 0)
                 {
-                    transform.localScale = new Vector3(-0.8f, transform.localScale.y, transform.localScale.z);
+                    transform.localScale = new Vector3(-0.6f, transform.localScale.y, transform.localScale.z);
                 }
                 else if (Input.GetAxis("Horizontal") > 0)
                 {
-                    transform.localScale = new Vector3(0.8f, transform.localScale.y, transform.localScale.z);
+                    transform.localScale = new Vector3(0.6f, transform.localScale.y, transform.localScale.z);
                 }
 
                 if (playerAnimator.GetInteger("playerState") == 0)
@@ -303,11 +343,8 @@ public class PlayerController : MonoBehaviour
                     playerAnimator.SetInteger("playerState", 4);
                 }
             }
-
-            if (verticalSpeed > -tmpMax)
-            {
-                verticalSpeed -= gravityAccel * Time.deltaTime;
-            }
+            
+            verticalSpeed -= ((verticalSpeed > 0 && verticalSpeed - gravityAccel * Time.deltaTime <= 0) ? gravityAccel / 2 : gravityAccel) * Time.deltaTime;
             if (verticalSpeed < -tmpMax) verticalSpeed = -tmpMax;
         }
 
@@ -323,10 +360,10 @@ public class PlayerController : MonoBehaviour
 
     private void JumpUpdate()
     {
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") || IsJumpBuffer())
         {
             bool tmpJumped = false;
-            if (playerState == PlayerIs.NormalMove && onGround)
+            if (playerState == PlayerIs.NormalMove && (onGround || jumpCoyoteTimer > 0 && !jumped))
             {
                 tmpJumped = true;
                 NormalJumpStart();
@@ -363,6 +400,7 @@ public class PlayerController : MonoBehaviour
                 horizonSpeed = velocity.x;
                 jumped = true;
                 jumpTimeProgress = 0;
+                jumpBufferTimer = 0;
             }
         }
         else if (Input.GetButton("Jump"))
@@ -463,7 +501,7 @@ public class PlayerController : MonoBehaviour
 
             if (wallStaminaRemain > 0)
             {
-                if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && Input.GetButtonDown("Dash"))         //PlayerIs.NormalMove -> PlayerIs.onWallとなるときに入るべき所
+                if ((playerState == PlayerIs.NormalMove || playerState == PlayerIs.onWallSlide) && (Input.GetButtonDown("Dash") || IsWallGrabBuffer()))         //PlayerIs.NormalMove -> PlayerIs.onWallとなるときに入るべき所
                 {
                     wallStaminaRemain -= Time.deltaTime;
                     ret = true;
@@ -471,6 +509,7 @@ public class PlayerController : MonoBehaviour
                     JumpValInit();
                     velocity = new Vector2(0, 0);
                     playerAnimator.SetInteger("playerState", 5);
+                    onWallBufferTimer = 0;
                 }
                 else if (playerState == PlayerIs.onWall && Input.GetButton("Dash"))                                                     //playerState == PlayerIs.onWallのときに入るべき所
                 {
@@ -523,6 +562,16 @@ public class PlayerController : MonoBehaviour
             inDarksideTimer = Mathf.Max(0, inDarksideTimer - Time.deltaTime);
         }
         //Debug.Log(inDarksideTimer);
+
+        if (!onGround)
+        {
+            jumpCoyoteTimer -= Time.deltaTime;
+        }
+
+        if (jumpBufferTimer > 0)
+        {
+            jumpBufferTimer -= Time.deltaTime;
+        }
     }
 
     private void LightDashUpdate()
@@ -616,6 +665,7 @@ public class PlayerController : MonoBehaviour
         if (!preOnGround && onGround)
         {
             JumpValInit();                                      //ジャンプ回復(空中ジャンプは含まない)
+            jumpCoyoteTimer = jumpCoyoteTime;
             airJumpCounter = 0;
             wallStaminaRemain = wallStaminaMax;                 //壁スタミナ回復
             if (playerState != PlayerIs.LightDashing)
@@ -775,6 +825,16 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private bool IsJumpBuffer()
+    {
+        return jumpBufferTimer > 0;
+    }
+
+    private bool IsWallGrabBuffer()
+    {
+        return onWallBufferTimer > 0;
+    }
+
     private void RespawnPlayerInit()
     {
         playerAnimator.gameObject.SetActive(true);
@@ -789,6 +849,9 @@ public class PlayerController : MonoBehaviour
         inDarksideTimer = 0;
         blackFire.Stop();
         ResetNumForJumping();
+        jumpCoyoteTimer = 0;
+        jumpBufferTimer = 0;
+        onWallBufferTimer = 0;
     }
 
     private T GetStatusByInDarksideTimer<T>(in T normal, in T darkside)

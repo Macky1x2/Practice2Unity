@@ -138,7 +138,7 @@ Transform:
   m_GameObject: {fileID: 259032747441806626}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 6.26625, y: 3.5247657, z: 1.125}
+  m_LocalScale: {x: 8.355, y: 4.6996875, z: 1.4999999}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1730521396025216560}
@@ -461,7 +461,7 @@ Transform:
   m_GameObject: {fileID: 1730521396025216565}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -18, y: -2.63, z: 0}
-  m_LocalScale: {x: 0.8, y: 1.4222224, z: 0.8}
+  m_LocalScale: {x: 0.6, y: 1.0666668, z: 0.6}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1730521394534522884}
@@ -570,6 +570,7 @@ MonoBehaviour:
   roofCheck: {fileID: 1730521394382825467}
   wallCheck: {fileID: 1730521394504617879}
   darksideCheck: {fileID: 346313407864484439}
+  fallDeathCheck: {fileID: 0}
   blackFire: {fileID: 1839223242567853782}
   playerAnimator: {fileID: 259032747441806624}
   maxHorizontalSpeed: 8
@@ -584,6 +585,8 @@ MonoBehaviour:
   jumpVelocityDarkside: 15
   jumpUpTime: 0.15
   jumpUpTimeDarkside: 0.23
+  jumpCoyoteTime: 0
+  jumpBufferTime: 0
   airJumpVelocityDarkside: 13.5
   airJumpUpTimeDarkside: 0.23
   wallStaminaMax: 15
@@ -597,6 +600,7 @@ MonoBehaviour:
   wallReverseJumpSpeedXDarkside: 10.5
   wallReverseJumpSpeedY: 10
   wallReverseJumpSpeedYDarkside: 12.5
+  onWallBufferTime: 0
   wallSlideJumpSpeedX: 7.5
   wallSlideJumpSpeedXDarkside: 11
   wallSlideJumpSpeedY: 10.5
