@@ -7,7 +7,12 @@ public class PlayerController : MonoBehaviour
 {
     public ActionGameManager gameManager;
     public GroundChecker groundCheck;
-    public RoofChecker roofCheck;
+    public BlockChecker leftRoofCheck;
+    public BlockChecker rightRoofCheck;
+    public BlockChecker upBlockCheckForLightDash;
+    public BlockChecker downBlockCheckForLightDash;
+    public BlockChecker leftBlockCheckForLightDash;
+    public BlockChecker rightBlockCheckForLightDash;
     public WallChecker wallCheck;
     public DarksideAndDeathChecker darksideCheck;
     public DarksideAndDeathChecker fallDeathCheck;
@@ -46,6 +51,9 @@ public class PlayerController : MonoBehaviour
     public float wallReverseJumpSpeedY;
     public float wallReverseJumpSpeedYDarkside;
     public float onWallBufferTime;
+    public float lfPushSpeedBySlide;
+    public float lfPushSpeedBySlideForLightDash;
+    public float udPushSpeedBySlideForLightDash;
 
     public float wallSlideJumpSpeedX;
     public float wallSlideJumpSpeedXDarkside;
@@ -77,8 +85,15 @@ public class PlayerController : MonoBehaviour
     private Vector2 horizonMoveDirection;
     private float horizonSpeed;
 
-    private bool onRoof;
     private bool onRoofAnd90;
+    private bool onLeftRoof90;
+    private bool onRightRoof90;
+    private bool onLeftRightRoofEnter;
+
+    private bool onUpBlockForLightDash;
+    private bool onDownBlockForLightDash;
+    private bool onLeftBlockForLightDash;
+    private bool onRightBlockForLightDash;
 
     private float wallStaminaRemain;
     private bool onWall;
@@ -172,8 +187,70 @@ public class PlayerController : MonoBehaviour
         //光ダッシュ
         LightDashUpdate();
 
+        //衝突補正(天井にぶつかって停止やスライドなど)
+        StopAndSlideUpdate();
+
         //この時点でvevlocityにはプレイヤーが取るべき速度が入っている
         rb.velocity = velocity;
+    }
+
+    private void StopAndSlideUpdate()
+    {
+        if (playerState != PlayerIs.LightDashing)
+        {
+            if (onLeftRoof90 && onRightRoof90)
+            {
+                velocity = new Vector2(velocity.x, Mathf.Min(velocity.y, 0.0f));
+            }
+            else if ((transform.localScale.x > 0 && onLeftRoof90 && !onRightRoof90 || transform.localScale.x < 0 && !onLeftRoof90 && onRightRoof90) && Input.GetAxis("Horizontal") >= 0 && velocity.y > 0)
+            {
+                velocity.x = Mathf.Max(velocity.x, lfPushSpeedBySlide);
+                //horizonSpeed += 3;
+                //if (horizonSpeed > maxHorizontalSpeed) horizonSpeed = maxHorizontalSpeed;
+            }
+            else if ((transform.localScale.x < 0 && onLeftRoof90 && !onRightRoof90 || transform.localScale.x > 0 && !onLeftRoof90 && onRightRoof90) && Input.GetAxis("Horizontal") <= 0 && velocity.y > 0)
+            {
+                velocity.x = Mathf.Min(velocity.x, -lfPushSpeedBySlide);
+                //horizonSpeed -= 3;
+                //if (horizonSpeed < -maxHorizontalSpeed) horizonSpeed = -maxHorizontalSpeed;
+            }
+        }
+        else
+        {
+            if(lightDashDirection==new Vector2(0, 1))
+            {
+                if(transform.localScale.x > 0 && onLeftRoof90 && !onRightRoof90 || transform.localScale.x < 0 && !onLeftRoof90 && onRightRoof90)
+                {
+                    velocity = new Vector2(velocity.x + lfPushSpeedBySlideForLightDash, velocity.y);
+                }
+                else if(transform.localScale.x < 0 && onLeftRoof90 && !onRightRoof90 || transform.localScale.x > 0 && !onLeftRoof90 && onRightRoof90)
+                {
+                    velocity = new Vector2(velocity.x - lfPushSpeedBySlideForLightDash, velocity.y);
+                }
+            }
+            else if(lightDashDirection == new Vector2(0, -1))
+            {
+                if (transform.localScale.x > 0 && onLeftBlockForLightDash && !onRightBlockForLightDash || transform.localScale.x < 0 && !onLeftBlockForLightDash && onRightBlockForLightDash)
+                {
+                    velocity = new Vector2(velocity.x + lfPushSpeedBySlideForLightDash, velocity.y);
+                }
+                else if (transform.localScale.x < 0 && onLeftBlockForLightDash && !onRightBlockForLightDash || transform.localScale.x > 0 && !onLeftBlockForLightDash && onRightBlockForLightDash)
+                {
+                    velocity = new Vector2(velocity.x - lfPushSpeedBySlideForLightDash, velocity.y);
+                }
+            }
+            else if(lightDashDirection == new Vector2(1, 0) || lightDashDirection == new Vector2(-1, 0))
+            {
+                if(onUpBlockForLightDash && !onDownBlockForLightDash)
+                {
+                    velocity.y -= udPushSpeedBySlideForLightDash;
+                }
+                else if(!onUpBlockForLightDash && onDownBlockForLightDash)
+                {
+                    velocity.y += udPushSpeedBySlideForLightDash;
+                }
+            }
+        }
     }
 
     private void InputBufferUpdate()
@@ -297,11 +374,11 @@ public class PlayerController : MonoBehaviour
 
                 if (Input.GetAxis("Horizontal") < 0)
                 {
-                    transform.localScale = new Vector3(-0.6f, transform.localScale.y, transform.localScale.z);
+                    transform.localScale = new Vector3(-0.8f, transform.localScale.y, transform.localScale.z);
                 }
                 else if (Input.GetAxis("Horizontal") > 0)
                 {
-                    transform.localScale = new Vector3(0.6f, transform.localScale.y, transform.localScale.z);
+                    transform.localScale = new Vector3(0.8f, transform.localScale.y, transform.localScale.z);
                 }
 
                 if (playerAnimator.GetInteger("playerState") == 0)
@@ -444,10 +521,6 @@ public class PlayerController : MonoBehaviour
         else if (Input.GetButtonUp("Jump"))
         {
             JumpEnd();
-        }
-        if (onRoofAnd90)
-        {
-            velocity = new Vector2(velocity.x, 0);
         }
     }
 
@@ -680,8 +753,22 @@ public class PlayerController : MonoBehaviour
         horizonMoveDirection = groundCheck.MoveDirection;
 
         //天井
-        onRoof = roofCheck.GetOnRoofEnter();
-        onRoofAnd90 = roofCheck.GetOnRoof90();
+        onLeftRoof90 = leftRoofCheck.IsTriggerCheck();
+        onRightRoof90 = rightRoofCheck.IsTriggerCheck();
+        if (onLeftRoof90 && onRightRoof90 && !onLeftRightRoofEnter)
+        {
+            onLeftRightRoofEnter = true;
+        }
+        else
+        {
+            onLeftRightRoofEnter = false;
+        }
+
+        //ブロック(光ダッシュ用)
+        onUpBlockForLightDash = upBlockCheckForLightDash.IsTriggerCheck();
+        onDownBlockForLightDash = downBlockCheckForLightDash.IsTriggerCheck();
+        onLeftBlockForLightDash = leftBlockCheckForLightDash.IsTriggerCheck();
+        onRightBlockForLightDash = rightBlockCheckForLightDash.IsTriggerCheck();
 
         //壁
         onWall = wallCheck.IsTriggerCheck();
