@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class BaseTrigger : MonoBehaviour
 {
-    public string targetTag;
+    public string[] targetTag;
 
 
     protected bool triggerEnter, triggerStay, triggerExit;
@@ -35,25 +35,34 @@ public class BaseTrigger : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.tag == targetTag)
+        for(int i = 0; i < targetTag.Length; i++)
         {
-            collisionProcessInTrigger(in collision, ref triggerEnter);
+            if (collision.tag == targetTag[i])
+            {
+                collisionProcessInTrigger(in collision, ref triggerEnter);
+            }
         }
     }
 
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (collision.tag == targetTag)
+        for (int i = 0; i < targetTag.Length; i++)
         {
-            collisionProcessInTrigger(in collision, ref triggerStay);
+            if (collision.tag == targetTag[i])
+            {
+                collisionProcessInTrigger(in collision, ref triggerStay);
+            }
         }
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if (collision.tag == targetTag)
+        for (int i = 0; i < targetTag.Length; i++)
         {
-            collisionProcessExitTrigger(in collision);
+            if (collision.tag == targetTag[i])
+            {
+                collisionProcessExitTrigger(in collision);
+            }
         }
     }
 
