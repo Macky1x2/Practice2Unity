@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class BaseTrigger : MonoBehaviour
 {
-    public string[] targetTag;
+    [SerializeField] private string[] targetTag;
 
 
     protected bool triggerEnter, triggerStay, triggerExit;

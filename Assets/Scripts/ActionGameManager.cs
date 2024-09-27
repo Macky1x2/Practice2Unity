@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class ActionGameManager : MonoBehaviour
 {
-    public CameraFadeOut fade;
-    [System.NonSerialized] public bool fadeEnd = false;
-    [System.NonSerialized] public bool fadeBlackStart = false;
+    [SerializeField] private CameraFadeOut fade;
+
+    public bool fadeEnd { get; private set; } = false;
+    public bool fadeBlackStart { get; private set; } = false;
 
 
     private bool fadeActive = false;

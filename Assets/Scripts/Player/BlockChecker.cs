@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class BlockChecker : BaseTrigger
 {
-    public float targetAngle;
-    public bool lfMirror;
+    [SerializeField] private float targetAngle;
+    [SerializeField] private bool lfMirror;
 
 
     override protected void collisionProcessInTrigger(in Collider2D collision, ref bool triggerEnterOrStay)

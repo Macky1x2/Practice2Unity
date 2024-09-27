@@ -5,7 +5,8 @@ using UnityEngine.Rendering.Universal;
 
 public class LightIntensifyDecrease : MonoBehaviour
 {
-    public float decreaseSpeed;
+    [SerializeField] private float decreaseSpeed;
+    public float DecreaseSpeed => decreaseSpeed;
 
     private Light2D decreaseLight;
     

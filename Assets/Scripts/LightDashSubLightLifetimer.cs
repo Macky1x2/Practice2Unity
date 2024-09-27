@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-public class LightDashSubLightLifetimeComponent : MonoBehaviour
+public class LightDashSubLightLifetimer : MonoBehaviour
 {
     private float lifetime;
     private Light2D squareLightPrefabs;
@@ -13,7 +13,7 @@ public class LightDashSubLightLifetimeComponent : MonoBehaviour
     {
         squareLightPrefabs = Resources.Load<Light2D>("Prefabs/Player Light");
         LightIntensifyDecrease lid = squareLightPrefabs.transform.GetComponent<LightIntensifyDecrease>();
-        lifetime = (squareLightPrefabs.intensity - 1) / lid.decreaseSpeed;
+        lifetime = (squareLightPrefabs.intensity - 1) / lid.DecreaseSpeed;
     }
 
     // Update is called once per frame

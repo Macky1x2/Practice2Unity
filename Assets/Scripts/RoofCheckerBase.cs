@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class RoofCheckerBase : MonoBehaviour
 {
-    public string targetTag;
-    public float targetAngle;
+    [SerializeField] private string targetTag;
+    [SerializeField] private float targetAngle;
 
 
     protected bool onTargetAndTargetAngle;
