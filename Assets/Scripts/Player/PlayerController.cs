@@ -5,81 +5,81 @@ using UnityEngine.Rendering.Universal;
 
 public class PlayerController : MonoBehaviour
 {
-    public ActionGameManager gameManager;
-    public GroundChecker groundCheck;
-    public BlockChecker leftRoofCheck;
-    public BlockChecker rightRoofCheck;
-    public BlockChecker upBlockCheckForLightDash;
-    public BlockChecker downBlockCheckForLightDash;
-    public BlockChecker leftBlockCheckForLightDash;
-    public BlockChecker rightBlockCheckForLightDash;
-    public WallChecker wallCheck;
-    public DarksideAndDeathChecker darksideCheck;
-    public DarksideAndDeathChecker fallDeathCheck;
-    public ParticleSystem blackFire;
-    public Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
+    [SerializeField] private ActionGameManager gameManager;
+    [SerializeField] private GroundChecker groundCheck;
+    [SerializeField] private BlockChecker leftRoofCheck;
+    [SerializeField] private BlockChecker rightRoofCheck;
+    [SerializeField] private BlockChecker upBlockCheckForLightDash;
+    [SerializeField] private BlockChecker downBlockCheckForLightDash;
+    [SerializeField] private BlockChecker leftBlockCheckForLightDash;
+    [SerializeField] private BlockChecker rightBlockCheckForLightDash;
+    [SerializeField] private WallChecker wallCheck;
+    [SerializeField] private DarksideAndDeathChecker darksideCheck;
+    [SerializeField] private DarksideAndDeathChecker fallDeathCheck;
+    [SerializeField] private ParticleSystem blackFire;
+    [SerializeField] private Animator playerAnimator;     //playerStateについて　0:Idle 1:Run 2:Jump 3:JumptoFall 4:Fall 5:Edge-Grab 6:Edge-Idle 7:Wall-Slide 8:Dashing
 
-    public float maxHorizontalSpeed;
-    public float maxHorizontalSpeedDarkside;
-    public float horizontalAccel;
-    public float horizontalAccelDarkside;
-    public float horizontalStopAccel;
-    public float horizontalStopAccelDarkside;
+    [SerializeField] private float maxHorizontalSpeed;
+    [SerializeField] private float maxHorizontalSpeedDarkside;
+    [SerializeField] private float horizontalAccel;
+    [SerializeField] private float horizontalAccelDarkside;
+    [SerializeField] private float horizontalStopAccel;
+    [SerializeField] private float horizontalStopAccelDarkside;
+    
+    [SerializeField] private float gravityAccel;
+    [SerializeField] private float maxGravitySpeed;
+    
+    [SerializeField] private float jumpVelocity;
+    [SerializeField] private float jumpVelocityDarkside;
+    [SerializeField] private float jumpUpTime;
+    [SerializeField] private float jumpUpTimeDarkside;
+    [SerializeField] private float jumpCoyoteTime;
+    [SerializeField] private float jumpBufferTime;
+    
+    [SerializeField] private float airJumpVelocityDarkside;
+    [SerializeField] private float airJumpUpTimeDarkside;
+    
+    [SerializeField] private float wallStaminaMax;
+    [SerializeField] private float wallClimbStaminaTimeMultiple;
+    [SerializeField] private float wallVerticalJumpStamina;
+    [SerializeField] private float wallClimbSpeed;
+    [SerializeField] private float wallClimbSpeedDarkside;
+    [SerializeField] private float wallVerticalJumpSpeed;
+    [SerializeField] private float wallVerticalJumpSpeedDarkside;
+    [SerializeField] private float wallReverseJumpSpeedX;
+    [SerializeField] private float wallReverseJumpSpeedXDarkside;
+    [SerializeField] private float wallReverseJumpSpeedY;
+    [SerializeField] private float wallReverseJumpSpeedYDarkside;
+    [SerializeField] private float onWallBufferTime;
+    [SerializeField] private float lfPushSpeedBySlide;
+    [SerializeField] private float lfPushSpeedBySlideForLightDash;
+    [SerializeField] private float udPushSpeedBySlideForLightDash;
+    
+    [SerializeField] private float wallSlideJumpSpeedX;
+    [SerializeField] private float wallSlideJumpSpeedXDarkside;
+    [SerializeField] private float wallSlideJumpSpeedY;
+    [SerializeField] private float wallSlideJumpSpeedYDarkside;
+    [SerializeField] private float wallSlideJumpedSpeedXRetentionTime;
+    [SerializeField] private float wallSlideJumpedSpeedXRetentionTimeDarkside;
+    [SerializeField] private float wallSlideMaxSpeed;
+    [SerializeField] private float wallSlideJumpUpTime;
+    [SerializeField] private float wallSlideJumpUpTimeDarkside;
+    
+    [SerializeField] private float lightDashSpeed;
+    [SerializeField] private float lightDashTime;
+    [SerializeField] private float lightDashUpEndSpeedY;
+    [SerializeField] private float lightDashRLUpEndSpeedY;
+    [SerializeField] private float putSquareLightSpan;
+    
+    [SerializeField] private float inDarksideReinforceTime;
+    [SerializeField] private float inDarksideDeathTime;
 
-    public float gravityAccel;
-    public float maxGravitySpeed;
+    [SerializeField] private Vector2[] animeOffsetXY;
 
-    public float jumpVelocity;
-    public float jumpVelocityDarkside;
-    public float jumpUpTime;
-    public float jumpUpTimeDarkside;
-    public float jumpCoyoteTime;
-    public float jumpBufferTime;
+    public Vector2 spawnPoint { get; set; }
+    public int hp { get; set; } = 0;
 
-    public float airJumpVelocityDarkside;
-    public float airJumpUpTimeDarkside;
-
-    public float wallStaminaMax;
-    public float wallClimbStaminaTimeMultiple;
-    public float wallVerticalJumpStamina;
-    public float wallClimbSpeed;
-    public float wallClimbSpeedDarkside;
-    public float wallVerticalJumpSpeed;
-    public float wallVerticalJumpSpeedDarkside;
-    public float wallReverseJumpSpeedX;
-    public float wallReverseJumpSpeedXDarkside;
-    public float wallReverseJumpSpeedY;
-    public float wallReverseJumpSpeedYDarkside;
-    public float onWallBufferTime;
-    public float lfPushSpeedBySlide;
-    public float lfPushSpeedBySlideForLightDash;
-    public float udPushSpeedBySlideForLightDash;
-
-    public float wallSlideJumpSpeedX;
-    public float wallSlideJumpSpeedXDarkside;
-    public float wallSlideJumpSpeedY;
-    public float wallSlideJumpSpeedYDarkside;
-    public float wallSlideJumpedSpeedXRetentionTime;
-    public float wallSlideJumpedSpeedXRetentionTimeDarkside;
-    public float wallSlideMaxSpeed;
-    public float wallSlideJumpUpTime;
-    public float wallSlideJumpUpTimeDarkside;
-
-    public float lightDashSpeed;
-    public float lightDashTime;
-    public float lightDashUpEndSpeedY;
-    public float lightDashRLUpEndSpeedY;
-    public float putSquareLightSpan;
-
-    public float inDarksideReinforceTime;
-    public float inDarksideDeathTime;
-
-    [System.NonSerialized] public Vector2 spawnPoint;
-    [System.NonSerialized] public bool iAmKilled = false;
-
-    public Vector2[] animeOffsetXY;
-
-
+    
     private bool onGround;
     private bool preOnGround;
     private Vector2 horizonMoveDirection;
@@ -155,7 +155,7 @@ public class PlayerController : MonoBehaviour
             AnimeOffsetUpdate();                //各アニメーションの位置を当たり判定にあわせる
             EffectsUpdate();                    //エフェクトの更新など(ただし、ここだけではない)
         }
-        DieAndSpawnUpdate();                //プレイヤーが死ぬか確認　　外的要因による死では、iAmKilledフラグが立ち上っている
+        DieAndSpawnUpdate();                //プレイヤーが死ぬか確認　　外的要因による死では、hpが0以下
 
         KeepPreFlags();                     //次のUpdateのために必要な情報を保存
     }
