@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
@@ -75,6 +76,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float inDarksideDeathTime;
 
     [SerializeField] private Vector2[] animeOffsetXY;
+
+    //デバッグ
+    [SerializeField] private Text debugText;
 
     public Vector2 spawnPoint { get; set; }
     public int hp { get; set; } = 0;
@@ -420,7 +424,16 @@ public class PlayerController : MonoBehaviour
                     playerAnimator.SetInteger("playerState", 4);
                 }
             }
-            
+
+            ////デバッグ
+            //if((verticalSpeed > 0 && verticalSpeed - gravityAccel * Time.deltaTime <= 0)){
+            //    debugText.text = $"重力半分";
+            //}
+            //else
+            //{
+            //    debugText.text = $"重力通常";
+            //}
+
             verticalSpeed -= ((verticalSpeed > 0 && verticalSpeed - gravityAccel * Time.deltaTime <= 0) ? gravityAccel / 2 : gravityAccel) * Time.deltaTime;
             if (verticalSpeed < -tmpMax) verticalSpeed = -tmpMax;
         }
@@ -437,6 +450,12 @@ public class PlayerController : MonoBehaviour
 
     private void JumpUpdate()
     {
+        //ジャンプバッファリングデモ
+        //if (Input.GetButtonDown("Jump"))
+        //{
+        //    Instantiate(Resources.Load("Prefabs/DebugCharBoxImage"),this.transform.position,Quaternion.identity);
+        //}
+
         if (Input.GetButtonDown("Jump") || IsJumpBuffer())
         {
             bool tmpJumped = false;
